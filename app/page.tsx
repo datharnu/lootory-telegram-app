@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Zap, Trophy, Users, FileText, Twitter, Send, Instagram, Mail, MessageCircle, Coins, Star, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function TelegramMiniApp() {
   const [activeTab, setActiveTab] = useState('tap');
@@ -107,7 +108,7 @@ export default function TelegramMiniApp() {
   };
 
   const TapTab = () => (
-    <div className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-fuchsia-950 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-950 via-black to-indigo-950 flex flex-col items-center justify-between text-white p-6 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Floating orbs */}
@@ -115,6 +116,11 @@ export default function TelegramMiniApp() {
         <div className="absolute top-40 right-20 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute bottom-32 left-20 w-36 h-36 bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         
+            <div className="w-full flex justify-between items-center mb-4 z-10 p-5">
+        <h1 className="text-2xl font-extrabold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent drop-shadow-lg">Lootory</h1>
+        <div className="text-sm text-purple-300">Lv. 3 • 10,888 pts</div>
+      </div>
+
         {/* Floating coins */}
         {floatingCoins.map(coin => (
           <div
@@ -168,59 +174,130 @@ export default function TelegramMiniApp() {
       )}
 
       {/* Main tap button with 3D effect */}
-      <div className="relative mb-8 z-10">
-        <button
-          onClick={handleTap}
-          className="group relative w-72 h-72 rounded-full transform transition-all active:scale-90 flex items-center justify-center"
-          style={{ 
+{/* Main tap button with 3D effect */}
+<div className="relative mb-8 z-10 bg-purple-900/40 border border-purple-700/40 rounded-3xl shadow-[0_0_30px_rgba(168,85,247,0.3)] w-full max-w-sm backdrop-blur-lg">
+  <div className="flex flex-col items-center p-6 space-y-6">
+    {/* Pulsing circular frame */}
+    <motion.div
+      className="relative flex items-center justify-center"
+      animate={{ scale: [1, 1.05, 1] }}
+      transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+    >
+      <div className="absolute w-52 h-52 rounded-full bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 blur-2xl opacity-50 animate-pulse" />
+      <div 
+        className="relative w-44 h-44 rounded-full border-4 border-purple-400 flex items-center justify-center shadow-[0_0_40px_rgba(168,85,247,0.8)] bg-gradient-to-b from-purple-950 via-purple-800 to-black overflow-hidden cursor-pointer"
+        onClick={handleTap}
+      >
+        <motion.div
+          className="relative"
+          animate={{ 
+            scale: [1, 1.1, 1],
+            rotateY: [0, 10, 0, -10, 0]
+          }}
+          transition={{ 
+            repeat: Infinity, 
+            duration: 3,
+            ease: "easeInOut"
+          }}
+          style={{
             transformStyle: 'preserve-3d',
-            transform: 'perspective(1000px) rotateX(5deg)'
+            perspective: '1000px'
           }}
         >
-          {/* Outer glow ring */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 animate-spin-slow opacity-75 blur-xl" />
-          
-          {/* Middle ring */}
-          <div className="absolute inset-4 rounded-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-600 animate-pulse" />
-          
-          {/* Inner button */}
-          <div className="relative w-64 h-64 rounded-full bg-gradient-to-br from-purple-500 via-fuchsia-500 to-pink-500 group-hover:from-purple-400 group-hover:via-fuchsia-400 group-hover:to-pink-400 shadow-2xl flex items-center justify-center overflow-hidden">
-            {/* Shine effect */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/30 to-white/0 transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+          {/* 3D Egg */}
+          <div className="relative w-32 h-40" style={{ transformStyle: 'preserve-3d' }}>
+            {/* Egg glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-300 via-orange-400 to-pink-500 blur-2xl opacity-60 animate-pulse" 
+                 style={{ transform: 'translateZ(-20px)' }} />
             
-            {/* Icon container with 3D depth */}
-            <div className="relative z-10" style={{ transform: 'translateZ(20px)' }}>
-              <div className="relative">
-                <div className="absolute inset-0 bg-yellow-300 blur-xl animate-pulse" />
-                <Zap size={100} className="relative text-white drop-shadow-2xl" strokeWidth={2.5} />
-              </div>
+            {/* Main egg body */}
+            <div 
+              className="absolute inset-0 bg-gradient-to-br from-purple-300 via-purple-400 to-purple-600 rounded-[50%] shadow-2xl"
+              style={{
+                transform: 'translateZ(10px)',
+                borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
+                boxShadow: '0 20px 60px rgba(168, 85, 247, 0.6), inset 0 -10px 30px rgba(0, 0, 0, 0.3), inset 0 10px 30px rgba(255, 255, 255, 0.2)'
+              }}
+            >
+              {/* Shine effect on egg */}
+              <div 
+                className="absolute top-8 left-8 w-16 h-20 bg-gradient-to-br from-white/60 via-white/30 to-transparent rounded-[50%] blur-sm"
+                style={{
+                  borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%'
+                }}
+              />
+              
+              {/* Sparkle effects */}
+              <div className="absolute top-6 right-8 w-3 h-3 bg-white rounded-full animate-ping opacity-75" />
+              <div className="absolute bottom-12 left-10 w-2 h-2 bg-yellow-300 rounded-full animate-pulse" 
+                   style={{ animationDelay: '0.5s' }} />
+              <div className="absolute top-1/2 right-6 w-2 h-2 bg-pink-300 rounded-full animate-pulse" 
+                   style={{ animationDelay: '1s' }} />
             </div>
 
-            {/* Tap animations */}
-            {tapAnimation.map(anim => (
-              <div
-                key={anim.id}
-                className="absolute text-yellow-300 font-black text-3xl animate-float pointer-events-none z-20"
-                style={{ 
-                  left: anim.x, 
-                  top: anim.y,
-                  textShadow: '0 0 10px rgba(253, 224, 71, 0.8), 0 0 20px rgba(253, 224, 71, 0.5)'
-                }}
-              >
-                +{anim.points}
-              </div>
-            ))}
+            {/* Egg highlight rim */}
+            <div 
+              className="absolute inset-0 rounded-[50%] border-2 border-white/30"
+              style={{
+                transform: 'translateZ(11px)',
+                borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%'
+              }}
+            />
+
+            {/* Center icon/symbol on egg */}
+            <div 
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ transform: 'translateZ(15px)' }}
+            >
+              <Zap size={48} className="text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] animate-pulse" strokeWidth={2.5} />
+            </div>
           </div>
-        </button>
-        
-        {/* Multiplier badge */}
-        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-2 rounded-full font-bold text-lg shadow-xl">
-          ⚡ {tapMultiplier}x Power
-        </div>
+        </motion.div>
+
+        {/* Tap animations */}
+        {tapAnimation.map(anim => (
+          <div
+            key={anim.id}
+            className="absolute text-yellow-300 font-black text-3xl animate-float pointer-events-none z-20"
+            style={{ 
+              left: anim.x, 
+              top: anim.y,
+              textShadow: '0 0 10px rgba(253, 224, 71, 0.8), 0 0 20px rgba(253, 224, 71, 0.5)'
+            }}
+          >
+            +{anim.points}
+          </div>
+        ))}
       </div>
+    </motion.div>
+
+    {/* Tap instruction text */}
+    <div className="text-purple-200 text-sm font-medium">
+      Tap the egg to collect tokens!
+    </div>
+
+    {/* Multiplier badge */}
+          <motion.div whileTap={{ scale: 0.9 }}>
+            <button className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white text-lg font-semibold px-12 py-6 rounded-full shadow-[0_0_25px_rgba(147,51,234,0.6)]">
+              Tap!
+            </button>
+          </motion.div>
+
+    {/* XP Progress */}
+    <div className="w-full flex flex-col items-center">
+      <p className="text-xs text-purple-300 mb-1">Energy Level</p>
+      <div className="w-full bg-purple-950/50 rounded-full h-2 overflow-hidden">
+        <div 
+          className="h-full bg-gradient-to-r from-purple-400 to-pink-500 transition-all duration-300"
+          style={{ width: `${(energy / maxEnergy) * 100}%` }}
+        />
+      </div>
+    </div>
+  </div>
+</div>
 
       {/* Energy bar with 3D design */}
-      <div className="w-full max-w-md px-6 mt-12 z-10">
+      {/* <div className="w-full max-w-md px-6 mt-12 z-10">
         <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl p-5 border border-purple-500/30 shadow-2xl">
           <div className="flex justify-between items-center mb-3">
             <span className="text-white font-semibold flex items-center gap-2">
@@ -242,7 +319,7 @@ export default function TelegramMiniApp() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Passive income display */}
       {passiveIncome > 0 && (
