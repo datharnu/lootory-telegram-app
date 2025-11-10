@@ -185,11 +185,9 @@ export default function TelegramMiniApp() {
 
         {/* Main egg container */}
         <div className="relative mb-8 z-10">
-          {/* Pulsing glow effect */}
-          <motion.div
-            className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 blur-3xl opacity-50"
-            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+          {/* Static glow effect */}
+          <div
+            className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 blur-3xl opacity-40"
             style={{ width: '250px', height: '250px', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
           />
           
@@ -198,26 +196,9 @@ export default function TelegramMiniApp() {
             className="relative w-56 h-56 rounded-full border-4 border-purple-400/50 flex items-center justify-center shadow-[0_0_60px_rgba(168,85,247,0.6)] bg-gradient-to-b from-purple-950/80 via-purple-900/60 to-black/80 backdrop-blur-sm cursor-pointer overflow-visible"
             onClick={handleTap}
             whileTap={{ scale: 0.95 }}
-            animate={{ 
-              boxShadow: [
-                '0 0 60px rgba(168,85,247,0.6)',
-                '0 0 80px rgba(168,85,247,0.8)',
-                '0 0 60px rgba(168,85,247,0.6)'
-              ]
-            }}
-            transition={{ repeat: Infinity, duration: 2 }}
           >
-            <motion.div
+            <div
               className="relative"
-              animate={{ 
-                scale: [1, 1.05, 1],
-                rotateY: [0, 5, 0, -5, 0]
-              }}
-              transition={{ 
-                repeat: Infinity, 
-                duration: 3,
-                ease: "easeInOut"
-              }}
               style={{
                 transformStyle: 'preserve-3d',
                 perspective: '1000px'
@@ -226,7 +207,7 @@ export default function TelegramMiniApp() {
               {/* 3D Egg */}
               <div className="relative w-32 h-40" style={{ transformStyle: 'preserve-3d' }}>
                 {/* Egg glow */}
-                <div className="absolute -inset-4 bg-gradient-to-br from-yellow-300 via-orange-400 to-pink-500 blur-2xl opacity-40 animate-pulse" 
+                <div className="absolute -inset-4 bg-gradient-to-br from-yellow-300 via-orange-400 to-pink-500 blur-2xl opacity-40" 
                      style={{ transform: 'translateZ(-20px)' }} />
                 
                 {/* Main egg body */}
@@ -245,13 +226,6 @@ export default function TelegramMiniApp() {
                       borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%'
                     }}
                   />
-                  
-                  {/* Sparkle effects */}
-                  <div className="absolute top-6 right-8 w-3 h-3 bg-white rounded-full animate-ping opacity-75" />
-                  <div className="absolute bottom-12 left-10 w-2 h-2 bg-yellow-300 rounded-full animate-pulse" 
-                       style={{ animationDelay: '0.5s' }} />
-                  <div className="absolute top-1/2 right-6 w-2 h-2 bg-pink-300 rounded-full animate-pulse" 
-                       style={{ animationDelay: '1s' }} />
                 </div>
 
                 {/* Egg highlight rim */}
@@ -268,10 +242,10 @@ export default function TelegramMiniApp() {
                   className="absolute inset-0 flex items-center justify-center"
                   style={{ transform: 'translateZ(15px)' }}
                 >
-                  <Zap size={48} className="text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] animate-pulse" strokeWidth={2.5} />
+                  <Zap size={48} className="text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]" strokeWidth={2.5} />
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* Tap animations */}
             {tapAnimation.map(anim => (
