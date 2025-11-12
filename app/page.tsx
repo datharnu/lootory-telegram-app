@@ -1,525 +1,82 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import { Zap, Trophy, Users, FileText, Twitter, Send, Instagram, Mail, MessageCircle, Coins, Star, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React from 'react'
+import Image from 'next/image'
+import { X } from 'lucide-react'
+
+import { Boost } from '@/components/icons/Boost'
+
+import BottomNav from '@/components/shared/BottomNav'
+import { motion } from 'framer-motion'
+
+
 
 export default function TelegramMiniApp() {
-  const [activeTab, setActiveTab] = useState('tap');
-  const [points, setPoints] = useState(0);
-  const [energy, setEnergy] = useState(1000);
-  const [maxEnergy] = useState(1000);
-  const [tapMultiplier, setTapMultiplier] = useState(1);
-  const [passiveIncome, setPassiveIncome] = useState(0);
-  const [tapAnimation, setTapAnimation] = useState<Array<{id: number, x: number, y: number, points: number}>>([]);
-  const [floatingCoins, setFloatingCoins] = useState<Array<{id: number, left: number, delay: number, duration: number}>>([]);
-  const [combo, setCombo] = useState(0);
 
-  // Generate floating coins animation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFloatingCoins(prev => [
-        ...prev.slice(-8),
-        {
-          id: Date.now(),
-          left: Math.random() * 100,
-          delay: Math.random() * 2,
-          duration: 3 + Math.random() * 2
-        }
-      ]);
-    }, 800);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Simulate passive income
-  useEffect(() => {
-    if (passiveIncome > 0) {
-      const interval = setInterval(() => {
-        setPoints(prev => prev + passiveIncome);
-      }, 3600000);
-      return () => clearInterval(interval);
-    }
-  }, [passiveIncome]);
-
-  // Energy regeneration
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setEnergy(prev => Math.min(prev + 1, maxEnergy));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [maxEnergy]);
-
-  // Combo reset
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setCombo(0);
-    }, 2000);
-    return () => clearTimeout(timeout);
-  }, [combo]);
-
-  const handleTap = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (energy >= 1) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      const earnedPoints = 1 * tapMultiplier;
-      setPoints(prev => prev + earnedPoints);
-      setEnergy(prev => prev - 1);
-      setCombo(prev => prev + 1);
-      
-      setTapAnimation(prev => [...prev, { id: Date.now(), x, y, points: earnedPoints }]);
-      setTimeout(() => {
-        setTapAnimation(prev => prev.slice(1));
-      }, 1000);
-    }
-  };
-
-  const tasks = [
-    { id: 1, title: 'Follow on Twitter', icon: <Twitter size={20} />, reward: 500, url: 'https://twitter.com', completed: false },
-    { id: 2, title: 'Join Telegram Group', icon: <Send size={20} />, reward: 300, url: 'https://t.me', completed: false },
-    { id: 3, title: 'Follow on Instagram', icon: <Instagram size={20} />, reward: 400, url: 'https://instagram.com', completed: false },
-    { id: 4, title: 'Join Discord', icon: <MessageCircle size={20} />, reward: 500, url: 'https://discord.com', completed: false },
-    { id: 5, title: 'Join Waitlist', icon: <Mail size={20} />, reward: 1000, url: '#', completed: false },
-  ];
-
-  const boosters = [
-    { id: 1, name: '2x Tap Boost', multiplier: 2, cost: 5000, type: 'free', owned: false },
-    { id: 2, name: '4x Tap Boost', multiplier: 4, cost: 25000, type: 'paid', owned: false },
-    { id: 3, name: '10x Tap Boost', multiplier: 10, cost: 100000, type: 'paid', owned: false },
-    { id: 4, name: 'Passive Income Lvl 1', income: 10, cost: 0, type: 'free', owned: false },
-    { id: 5, name: 'Passive Income Lvl 2', income: 50, cost: 15000, type: 'paid', owned: false },
-    { id: 6, name: 'Passive Income Lvl 3', income: 200, cost: 50000, type: 'paid', owned: false },
-  ];
-
-  const team = [
-    { name: 'Ernests Rajeckis', role: 'Founder & CEO', social: 'https://twitter.com' },
-  ];
-
-  const buyBooster = (booster: any) => {
-    if (points >= booster.cost) {
-      setPoints(prev => prev - booster.cost);
-      if (booster.multiplier) {
-        setTapMultiplier(booster.multiplier);
-      }
-      if (booster.income) {
-        setPassiveIncome(prev => prev + booster.income);
-      }
-    }
-  };
-
-  const TapTab = () => (
-    <div className="relative min-h-screen bg-gradient-to-br from-purple-950 via-black to-indigo-950 overflow-hidden pb-24">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Floating orbs */}
-        <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-40 right-20 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-32 left-20 w-36 h-36 bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-
-        {/* Floating coins */}
-        {floatingCoins.map(coin => (
-          <div
-            key={coin.id}
-            className="absolute bottom-0 text-yellow-400/40"
-            style={{
-              left: `${coin.left}%`,
-              animation: `floatUp ${coin.duration}s ease-out forwards`,
-              animationDelay: `${coin.delay}s`
-            }}
-          >
-            <Coins size={24} />
-          </div>
-        ))}
-
-        {/* Sparkles */}
-        <div className="absolute top-1/4 left-1/4 animate-twinkle">
-          <Sparkles className="text-yellow-300/60" size={20} />
-        </div>
-        <div className="absolute top-1/3 right-1/3 animate-twinkle" style={{ animationDelay: '1.5s' }}>
-          <Star className="text-purple-300/60" size={16} />
-        </div>
-        <div className="absolute bottom-1/3 right-1/4 animate-twinkle" style={{ animationDelay: '0.7s' }}>
-          <Sparkles className="text-blue-300/60" size={18} />
-        </div>
-      </div>
-
-      {/* Header */}
-      <div className="relative w-full flex justify-between items-center p-6 z-10">
-        <h1 className="text-3xl font-extrabold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent drop-shadow-lg">Lootory</h1>
-        <div className="text-sm text-purple-300 bg-purple-900/40 px-4 py-2 rounded-full border border-purple-500/30">
-          Lv. 3 • 10,888 pts
-        </div>
-      </div>
-
-      {/* Main content container */}
-      <div className="relative flex flex-col items-center justify-center px-6 pt-4">
-        
-        {/* Score display with 3D effect */}
-        <div className="relative z-10 text-center mb-8">
-          <div className="relative inline-block">
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 blur-2xl opacity-50" />
-            <div className="relative bg-gradient-to-br from-yellow-400 via-orange-400 to-red-500 text-transparent bg-clip-text">
-              <div className="text-7xl font-black tracking-tight" style={{ textShadow: '0 4px 12px rgba(251, 191, 36, 0.3)' }}>
-                {points.toLocaleString()}
-              </div>
-            </div>
-          </div>
-          <div className="text-purple-200 text-lg font-semibold mt-2 flex items-center justify-center gap-2">
-            <Coins className="text-yellow-400" size={20} />
-            Tokens
-          </div>
-        </div>
-
-        {/* Combo counter */}
-        {combo > 5 && (
-          <motion.div 
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute top-20 right-8 z-20"
-          >
-            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-full font-bold text-xl shadow-2xl animate-bounce">
-              🔥 {combo}x COMBO!
-            </div>
-          </motion.div>
-        )}
-
-        {/* Main egg container */}
-        <div className="relative mb-8 z-10">
-          {/* Static glow effect */}
-          <div
-            className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 blur-3xl opacity-40"
-            style={{ width: '250px', height: '250px', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
-          />
-          
-          {/* Tap circle with egg */}
-          <motion.div
-            className="relative w-56 h-56 rounded-full border-4 border-purple-400/50 flex items-center justify-center shadow-[0_0_60px_rgba(168,85,247,0.6)] bg-gradient-to-b from-purple-950/80 via-purple-900/60 to-black/80 backdrop-blur-sm cursor-pointer overflow-visible"
-            onClick={handleTap}
-            whileTap={{ scale: 0.95 }}
-          >
-            <div
-              className="relative"
-              style={{
-                transformStyle: 'preserve-3d',
-                perspective: '1000px'
-              }}
-            >
-              {/* 3D Egg */}
-              <div className="relative w-32 h-40" style={{ transformStyle: 'preserve-3d' }}>
-                {/* Egg glow */}
-                <div className="absolute -inset-4 bg-gradient-to-br from-yellow-300 via-orange-400 to-pink-500 blur-2xl opacity-40" 
-                     style={{ transform: 'translateZ(-20px)' }} />
-                
-                {/* Main egg body */}
-                <div 
-                  className="absolute inset-0 bg-gradient-to-br from-purple-300 via-purple-400 to-purple-600 shadow-2xl"
-                  style={{
-                    transform: 'translateZ(10px)',
-                    borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
-                    boxShadow: '0 20px 60px rgba(168, 85, 247, 0.6), inset 0 -10px 30px rgba(0, 0, 0, 0.3), inset 0 10px 30px rgba(255, 255, 255, 0.2)'
-                  }}
-                >
-                  {/* Shine effect on egg */}
-                  <div 
-                    className="absolute top-8 left-8 w-16 h-20 bg-gradient-to-br from-white/60 via-white/30 to-transparent blur-sm"
-                    style={{
-                      borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%'
-                    }}
-                  />
-                </div>
-
-                {/* Egg highlight rim */}
-                <div 
-                  className="absolute inset-0 border-2 border-white/30"
-                  style={{
-                    transform: 'translateZ(11px)',
-                    borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%'
-                  }}
-                />
-
-                {/* Center icon on egg */}
-                <div 
-                  className="absolute inset-0 flex items-center justify-center"
-                  style={{ transform: 'translateZ(15px)' }}
-                >
-                  <Zap size={48} className="text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]" strokeWidth={2.5} />
-                </div>
-              </div>
-            </div>
-
-            {/* Tap animations */}
-            {tapAnimation.map(anim => (
-              <div
-                key={anim.id}
-                className="absolute text-yellow-300 font-black text-3xl pointer-events-none z-30"
-                style={{ 
-                  left: anim.x, 
-                  top: anim.y,
-                  textShadow: '0 0 10px rgba(253, 224, 71, 0.8), 0 0 20px rgba(253, 224, 71, 0.5)',
-                  animation: 'floatUp 1s ease-out forwards'
-                }}
-              >
-                +{anim.points}
-              </div>
-            ))}
-          </motion.div>
-        </div>
-
-        {/* Tap instruction */}
-        <div className="text-purple-200 text-base font-medium mb-6 z-10">
-          Tap the egg to collect tokens!
-        </div>
-
-        {/* Energy bar card */}
-        <div className="w-full max-w-sm z-10">
-          <div className="bg-purple-900/40 border border-purple-700/40 rounded-2xl shadow-[0_0_30px_rgba(168,85,247,0.3)] backdrop-blur-lg p-6">
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2">
-                <Zap size={18} className="text-yellow-400" />
-                <span className="text-white font-semibold">Energy</span>
-              </div>
-              <span className="text-purple-300 font-bold">{energy}/{maxEnergy}</span>
-            </div>
-            <div className="relative w-full bg-purple-950/50 rounded-full h-3 overflow-hidden">
-              <motion.div 
-                className="h-full bg-gradient-to-r from-green-400 via-emerald-500 to-cyan-500 shadow-lg relative"
-                style={{ width: `${(energy / maxEnergy) * 100}%` }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/40 to-white/0 animate-shimmer" />
-              </motion.div>
-            </div>
-            
-            {/* Multiplier badge */}
-            {tapMultiplier > 1 && (
-              <div className="mt-4 flex items-center justify-center">
-                <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-full text-sm font-bold">
-                  {tapMultiplier}x Multiplier Active
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Passive income display */}
-        {passiveIncome > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-6 z-10"
-          >
-            <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl border border-green-500/30 text-green-300 px-6 py-3 rounded-full font-semibold text-sm shadow-xl flex items-center gap-2">
-              <Sparkles size={16} className="animate-pulse" />
-              Earning +{passiveIncome} tokens/hour
-            </div>
-          </motion.div>
-        )}
-      </div>
-
-      <style jsx>{`
-        @keyframes floatUp {
-          0% {
-            transform: translateY(0) scale(1);
-            opacity: 0;
-          }
-          10% {
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(-80px) scale(1.2);
-            opacity: 0;
-          }
-        }
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-100%);
-          }
-          100% {
-            transform: translateX(100%);
-          }
-        }
-        @keyframes twinkle {
-          0%, 100% {
-            opacity: 0.3;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 1;
-            transform: scale(1.2);
-          }
-        }
-        .animate-shimmer {
-          animation: shimmer 2s infinite;
-        }
-        .animate-twinkle {
-          animation: twinkle 3s ease-in-out infinite;
-        }
-      `}</style>
-    </div>
-  );
-
-  const TasksTab = () => (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-fuchsia-950 p-6 pb-24">
-      <h2 className="text-3xl font-bold text-white mb-6 text-center">Complete Tasks</h2>
-      <div className="max-w-2xl mx-auto space-y-4">
-        {tasks.map(task => (
-          <motion.div 
-            key={task.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: task.id * 0.1 }}
-            className="bg-white/10 backdrop-blur-md rounded-xl p-4 hover:bg-white/15 transition-all border border-purple-500/20"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
-                  {task.icon}
-                </div>
-                <div>
-                  <div className="text-white font-semibold">{task.title}</div>
-                  <div className="text-yellow-400 text-sm flex items-center gap-1">
-                    <Coins size={14} />
-                    +{task.reward} points
-                  </div>
-                </div>
-              </div>
-              <a
-                href={task.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg"
-              >
-                Start
-              </a>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const BoostTab = () => (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-fuchsia-950 p-6 pb-24">
-      <h2 className="text-3xl font-bold text-white mb-6 text-center">Boosters</h2>
-      <div className="max-w-2xl mx-auto space-y-4">
-        {boosters.map(booster => (
-          <motion.div 
-            key={booster.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: booster.id * 0.1 }}
-            className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-purple-500/20"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <div className="text-white font-semibold">{booster.name}</div>
-                <div className="text-purple-300 text-sm">
-                  {booster.multiplier && `${booster.multiplier}x tap power`}
-                  {booster.income && `+${booster.income} tokens/hour`}
-                </div>
-              </div>
-              <button
-                onClick={() => buyBooster(booster)}
-                disabled={points < booster.cost}
-                className={`px-6 py-2 rounded-full font-semibold transition-all shadow-lg ${
-                  points >= booster.cost
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600'
-                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                {booster.cost === 0 ? 'Free' : `${booster.cost.toLocaleString()} pts`}
-              </button>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const AboutTab = () => (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-fuchsia-950 p-6 pb-24">
-      <h2 className="text-3xl font-bold text-white mb-6 text-center">About Project</h2>
-      <div className="max-w-2xl mx-auto space-y-6">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-purple-500/20"
-        >
-          <h3 className="text-xl font-bold text-white mb-4">Our Mission</h3>
-          <p className="text-purple-200">
-            Building the future of Web3 gaming with innovative tap-to-earn mechanics and community-driven rewards.
-          </p>
-        </motion.div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-purple-500/20"
-        >
-          <h3 className="text-xl font-bold text-white mb-4">Leadership Team</h3>
-          {team.map((member, idx) => (
-            <div key={idx} className="flex items-center justify-between py-3">
-              <div>
-                <div className="text-white font-semibold">{member.name}</div>
-                <div className="text-purple-300 text-sm">{member.role}</div>
-              </div>
-              <a href={member.social} target="_blank" rel="noopener noreferrer">
-                <Twitter className="text-purple-400 hover:text-purple-300" size={20} />
-              </a>
-            </div>
-          ))}
-        </motion.div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-purple-500/20"
-        >
-          <a
-            href="#"
-            className="flex items-center justify-between text-white hover:text-purple-300 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <FileText size={24} />
-              <span className="font-semibold">Read Whitepaper</span>
-            </div>
-            <span className="text-purple-400">→</span>
-          </a>
-        </motion.div>
-      </div>
-    </div>
-  );
-
+  const Features = [
+    {
+      icon: "/DailyTask.png",
+      title: 'Daily Reward',
+      data: "500"
+    },
+    {
+      icon: "/Trophy.png",
+      title: 'Leaderboard',
+      data: "1000"
+    },
+    {
+      icon: "/Boost.png",
+      title: 'Boost',
+      data: "1000"
+    },
+  ]
   return (
-    <div className="relative min-h-screen">
-      {activeTab === 'tap' && <TapTab />}
-      {activeTab === 'tasks' && <TasksTab />}
-      {activeTab === 'boost' && <BoostTab />}
-      {activeTab === 'about' && <AboutTab />}
+    <div className=''>
+    {/* header */}
+    <div className='flex justify-between items-center bg-[#4B0481]/57 p-6'>
+      <Image src="/logo.png" alt="logo" width={100} height={100} />
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-purple-500/30 z-50">
-        <div className="flex justify-around items-center max-w-2xl mx-auto">
-          {[
-            { id: 'tap', icon: Zap, label: 'Tap' },
-            { id: 'tasks', icon: Trophy, label: 'Tasks' },
-            { id: 'boost', icon: Users, label: 'Boost' },
-            { id: 'about', icon: FileText, label: 'About' },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center py-3 px-6 transition-all ${
-                activeTab === tab.id ? 'text-purple-400' : 'text-gray-400'
-              }`}
-            >
-              <tab.icon size={24} />
-              <span className="text-xs mt-1 font-semibold">{tab.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+    <X className='w-6 h-6' />
+
     </div>
-  );
+    {/* balance display */}
+<section className='p-6'>
+<div className='flex items-center gap-3'>
+      <Image src="/avatar.jpg" alt="logo" width={100} height={100} className='rounded-full w-14 h-14 object-cover' />
+      <div>
+        <h2 className='text-xl font-bold'>Earnest</h2>
+      </div>
+    </div>
+
+<div className='flex items-center justify-between'>
+  {Features.map((feature) => (
+    <div key={feature.title} className='my-14 flex-col gap-5'>
+<h1 className='text-2xl font-bold mb-2 '>{feature.data}</h1>
+   <div className='flex flex-col'>
+    <Image src={feature.icon} alt="pts" width={100} height={100} className='w-16 h-14 object-contain' />
+    
+    {/* {feature.icon} */}
+    <p className='text-sm text-gray-300'>{feature.title}</p>
+   </div>
+
+    </div>
+  ))}
+
+</div>
+
+{/* The Tap button */}
+<div className='flex justify-center my-10'>
+  <motion.button
+    whileTap={{ scale: 0.9 }}
+    className="relative inline-flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 p-2 shadow-lg hover:shadow-xl active:scale-95 transition-all"
+    aria-label="Tap"
+  >
+    <span className="flex items-center justify-center rounded-full bg-white">
+      <Image src="/Tap.png" alt="tap" width={100} height={100} className="w-40 h-40 object-contain" />
+    </span>
+  </motion.button>
+</div>
+</section>
+<BottomNav/>
+    </div>
+  )
 }

@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "components/icons/home.tss"  ],
   "exclude": ["node_modules"]
 }
