@@ -43,11 +43,11 @@ export default function TelegramMiniApp() {
 <div className='flex items-center gap-3'>
       <Image src="/avatar.jpg" alt="logo" width={100} height={100} className='rounded-full w-10 h-10 object-cover' />
       <div>
-        <h2 className='text-xl font-bold'>Earnest</h2>
+        <h2 className='text-xl font-bold text-white'>Earnest</h2>
       </div>
     </div>
 <div className='space-y-2'>
-<p>Level 3</p>
+<p className='text-white'>Level 3</p>
     <Image src="/progress.svg" alt="logo" width={100} height={100} className='rounded-full  object-cover' />
 
 </div>
@@ -57,12 +57,12 @@ export default function TelegramMiniApp() {
   {Features.map((feature) => (
     <div key={feature.title} className='my-14 flex-col space-y-2'>
 
-<h1 className='text-2xl font-bold mb-2 text-center '>{feature.data}</h1>
+<h1 className='text-2xl font-bold mb-2 text-center text-white '>{feature.data}</h1>
 
    <div className='flex flex-col items-center gap-1'>
     {feature.icon}
     <div>
-<p className='text-sm text-gray-300'>{feature.title}</p>
+<p className='text-sm text-gray-300 text'>{feature.title}</p>
 </div>
    </div>
     </div>

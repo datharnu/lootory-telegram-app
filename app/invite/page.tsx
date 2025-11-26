@@ -7,11 +7,11 @@ export default function page() {
 <div className='flex items-center gap-3'>
       <Image src="/avatar.jpg" alt="logo" width={100} height={100} className='rounded-full w-10 h-10 object-cover' />
       <div>
-        <h2 className='text-xl font-bold'>Earnest</h2>
+        <h2 className='text-xl font-bold text-white'>Earnest</h2>
       </div>
     </div>
 <div className='space-y-2'>
-<p>Level 3</p>
+<p className='text-white'>Level 3</p>
     <Image src="/progress.svg" alt="logo" width={100} height={100} className='rounded-full  object-cover' />
 
 </div>
@@ -19,7 +19,7 @@ export default function page() {
         <section className='flex flex-col justify-center items-center'>
             <Image src="/invite.svg" alt="logo" width={100} height={100} className=' w-[220px] h-full object-cover' />
    <div className='mb-4'>
-   <p className='text-center text-[25px] font-bold'>
+   <p className='text-center text-white text-[25px] font-bold'>
             Send free gifts to your friends and <span className='text-[#D2F10C]'>earn 20%</span> of your friends profit
     </p>
    </div>
