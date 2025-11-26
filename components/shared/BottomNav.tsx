@@ -6,6 +6,7 @@ import { nav } from 'framer-motion/client';
 import UserIcon from '../icons/user';
 import WalletIcon from '../icons/wallet';
 import InviteIcon from '../icons/invite';
+import LogoIcon from '../icons/Logo';
 
 interface NavProps {
     id: number;
@@ -30,8 +31,8 @@ interface NavProps {
     {
         id: 3,
         name: "Invite",
-        href: "/leaderboard",
-        icon: <InviteIcon/>
+        href: "/invite",
+        icon: <LogoIcon/>
     },
     {
         id: 4,
@@ -51,10 +52,13 @@ export default function BottomNav() {
 <nav className='fixed bottom-0 left-0 right-0'>
 <div className='bg-[#460A73] flex justify-between items-center p-4'>
         {BottomNavData.map((item) => (
-            <div key={item.id}>
-              {item.icon}
-              <p className='text-white text-xs'>{item.name}</p>
-            </div>
+            <Link key={item.id} href={item.href} className={item.id === 3 ? 'flex flex-col items-center -mt-8 relative' : 'flex flex-col items-center'}>
+         
+              <div className={item.id === 3 ? 'bg-[#6A00BB] border-7 border-[#460A73] rounded-full p-3 shadow-lg relative z-10' : ''}>
+                {item.icon}
+              </div>
+              <p className={`text-xs ${item.id === 3 ? 'bg-[#6A00BB] backdrop-blur-md border border-white/10 uppercase px-2 py-1 rounded-full mt-1 font-medium ' : 'text-white'}`}>{item.name}</p>
+            </Link>
         ))}
     </div>
 </nav>
