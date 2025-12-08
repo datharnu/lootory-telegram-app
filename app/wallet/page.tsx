@@ -210,11 +210,7 @@ export default function WalletPage() {
                       : 'bg-red-500/20'
                   }`}>
                     {transaction.type === 'referral' ? (
-                      <TrendingUp className={`w-5 h-5 ${
-                        transaction.type === 'earned' || transaction.type === 'referral'
-                          ? 'text-green-400'
-                          : 'text-red-400'
-                      }`} />
+                      <TrendingUp className='w-5 h-5 text-green-400' />
                     ) : (
                       <Coins className={`w-5 h-5 ${
                         transaction.type === 'earned'
