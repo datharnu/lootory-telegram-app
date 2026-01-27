@@ -1,20 +1,20 @@
 "use client";
-
-import { X } from "lucide-react";
 import React from "react";
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  className?: string;
+}
+
+const Header: React.FC<HeaderProps> = ({ className = "" }) => {
   return (
-    <header className=" flex justify-between py-4 px-6 items-center bg-[#4B0481]/57 '">
+    <header className={`flex justify-between fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md py-4 px-6 items-center bg-[#4B0481]/80 backdrop-blur-md z-50 ${className}`}>
       <div className="flex items-center gap-2">
         <img
           src="/logo.png"
-          alt="App Logo"
+          alt="Lotoory Logo"
           className="w-20"
         />
-
       </div>
-      <X className='w-6 h-6' />
     </header>
   );
 };

@@ -97,8 +97,8 @@ export default function BoostersPage() {
   const handlePurchase = (booster: Booster) => {
     if (coins >= booster.cost && booster.level < booster.maxLevel) {
       setCoins(prev => prev - booster.cost)
-      setBoosters(prev => prev.map(b => 
-        b.id === booster.id 
+      setBoosters(prev => prev.map(b =>
+        b.id === booster.id
           ? { ...b, owned: true, level: b.level + 1, cost: Math.floor(b.cost * 1.5) }
           : b
       ))
@@ -108,8 +108,8 @@ export default function BoostersPage() {
   const handleUpgrade = (booster: Booster) => {
     if (coins >= booster.cost && booster.level < booster.maxLevel) {
       setCoins(prev => prev - booster.cost)
-      setBoosters(prev => prev.map(b => 
-        b.id === booster.id 
+      setBoosters(prev => prev.map(b =>
+        b.id === booster.id
           ? { ...b, level: b.level + 1, cost: Math.floor(b.cost * 1.5) }
           : b
       ))
@@ -117,136 +117,127 @@ export default function BoostersPage() {
   }
 
   return (
-    <div className='min-h-screen pb-24 p-6'>
-      {/* Header */}
-      <div className='mb-6'>
-        <h1 className='text-3xl font-bold text-white mb-2'>Mine & Upgrade</h1>
-        <p className='text-gray-300'>Boost your earnings with powerful upgrades</p>
+    <div className='h-dvh flex flex-col overflow-hidden pt-[84px] pb-[99px] px-4'>
+      {/* Header - Shrunk */}
+      <div className='mb-3 flex-shrink-0'>
+        <h1 className='text-xl font-black text-white italic tracking-tighter'>MINE & UPGRADE</h1>
+        <p className='text-[10px] text-purple-300 font-bold uppercase tracking-wider'>Power-up your earnings</p>
       </div>
 
-      {/* Balance Display */}
-      <div className='bg-gradient-to-r from-purple-600/30 to-pink-600/30 rounded-2xl p-4 mb-6 border border-purple-400/20'>
+      {/* Balance Display - Compact */}
+      <div className='bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 mb-4 flex-shrink-0 shadow-inner'>
         <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <div className='bg-yellow-400/20 p-2 rounded-full'>
-              <Coins className='w-6 h-6 text-yellow-400' />
+          <div className='flex items-center gap-2.5'>
+            <div className='bg-yellow-400/10 p-2 rounded-xl border border-yellow-400/20'>
+              <Coins className='w-5 h-5 text-yellow-400' />
             </div>
             <div>
-              <p className='text-xs text-gray-300'>Your Coins</p>
-              <p className='text-2xl font-bold text-white'>{coins.toLocaleString()}</p>
+              <p className='text-[8px] text-gray-500 font-black uppercase tracking-widest'>Your Savings</p>
+              <p className='text-lg font-black text-white leading-none'>{coins.toLocaleString()}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Boosters Grid */}
-      <div className='grid grid-cols-1 gap-4'>
-        {boosters.map((booster, index) => {
-          const canAfford = coins >= booster.cost
-          const isMaxLevel = booster.level >= booster.maxLevel
-          const isOwned = booster.owned || booster.level > 0
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-4">
+        {/* Boosters Grid - Compact Cards */}
+        <div className='grid grid-cols-1 gap-3'>
+          {boosters.map((booster, index) => {
+            const canAfford = coins >= booster.cost
+            const isMaxLevel = booster.level >= booster.maxLevel
+            const isOwned = booster.owned || booster.level > 0
 
-          return (
-            <motion.div
-              key={booster.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-2xl p-5 border-2 ${
-                isOwned ? 'border-green-400/50' : 'border-purple-400/30'
-              }`}
-            >
-              <div className='flex items-start justify-between mb-4'>
-                <div className='flex items-center gap-4'>
-                  <div className='bg-purple-500/30 p-3 rounded-xl text-3xl'>
+            return (
+              <motion.div
+                key={booster.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className={`bg-white/5 backdrop-blur-sm rounded-2xl p-3 border ${isOwned ? 'border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.05)]' : 'border-white/5'
+                  }`}
+              >
+                <div className='flex items-start gap-3 mb-3'>
+                  <div className='bg-purple-500/10 p-2.5 rounded-xl text-2xl flex-shrink-0'>
                     {booster.icon}
                   </div>
-                  <div className='flex-1'>
-                    <div className='flex items-center gap-2 mb-1'>
-                      <h3 className='text-xl font-bold text-white'>{booster.name}</h3>
+                  <div className='flex-1 min-w-0'>
+                    <div className='flex items-center gap-1.5 mb-0.5'>
+                      <h3 className='text-xs font-black text-white truncate'>{booster.name}</h3>
                       {isOwned && (
-                        <span className='bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-full flex items-center gap-1'>
-                          <Check className='w-3 h-3' />
-                          Owned
-                        </span>
+                        <span className='bg-green-500/20 text-green-400 text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase'>Owned</span>
                       )}
                     </div>
-                    <p className='text-sm text-gray-300 mb-2'>{booster.description}</p>
-                    <div className='flex items-center gap-4'>
-                      <span className='text-xs text-purple-300 bg-purple-500/20 px-2 py-1 rounded'>
+                    <p className='text-[9px] text-gray-500 font-medium line-clamp-1 mb-1.5'>{booster.description}</p>
+                    <div className='flex items-center gap-3'>
+                      <span className='text-[8px] text-purple-400 font-black uppercase bg-purple-500/10 px-1.5 py-0.5 rounded'>
                         {booster.effect}
                       </span>
                       {isOwned && (
-                        <span className='text-xs text-yellow-300'>
-                          Level {booster.level} / {booster.maxLevel}
+                        <span className='text-[8px] text-gray-500 font-black uppercase'>
+                          LVL {booster.level} / {booster.maxLevel}
                         </span>
                       )}
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Progress Bar for Level */}
-              {isOwned && !isMaxLevel && (
-                <div className='mb-4'>
-                  <div className='w-full bg-gray-700 rounded-full h-2 overflow-hidden'>
-                    <motion.div
-                      className='h-full bg-gradient-to-r from-purple-500 to-pink-500'
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(booster.level / booster.maxLevel) * 100}%` }}
-                    />
+                {/* Progress Bar - Shrunk */}
+                {isOwned && !isMaxLevel && (
+                  <div className='mb-3'>
+                    <div className='w-full bg-black/40 rounded-full h-1 overflow-hidden border border-white/5'>
+                      <motion.div
+                        className='h-full bg-gradient-to-r from-purple-500 to-pink-500'
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(booster.level / booster.maxLevel) * 100}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {/* Action Button */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => isOwned ? handleUpgrade(booster) : handlePurchase(booster)}
-                disabled={!canAfford || isMaxLevel}
-                className={`w-full py-3 rounded-xl font-bold transition-all ${
-                  isMaxLevel
-                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    : canAfford
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-lg hover:shadow-purple-500/50'
-                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                {isMaxLevel ? (
-                  <span className='flex items-center justify-center gap-2'>
-                    <Lock className='w-4 h-4' />
-                    Max Level
-                  </span>
-                ) : isOwned ? (
-                  <span className='flex items-center justify-center gap-2'>
-                    <TrendingUp className='w-4 h-4' />
-                    Upgrade - {booster.cost.toLocaleString()} Coins
-                  </span>
-                ) : (
-                  <span className='flex items-center justify-center gap-2'>
-                    <Zap className='w-4 h-4' />
-                    Purchase - {booster.cost.toLocaleString()} Coins
-                  </span>
                 )}
-              </motion.button>
-            </motion.div>
-          )
-        })}
-      </div>
 
-      {/* Info Section */}
-      <div className='mt-8 bg-blue-600/20 rounded-2xl p-4 border border-blue-400/30'>
-        <h3 className='text-white font-bold mb-2 flex items-center gap-2'>
-          <Zap className='w-5 h-5 text-yellow-400' />
-          Upgrade Tips
-        </h3>
-        <ul className='text-sm text-gray-300 space-y-1'>
-          <li>• Each upgrade increases in cost by 50%</li>
-          <li>• Multiple upgrades stack for maximum effect</li>
-          <li>• Focus on Coin Multiplier for faster earnings</li>
-          <li>• Energy upgrades help you tap more often</li>
-        </ul>
+                {/* Action Button - Compact */}
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => isOwned ? handleUpgrade(booster) : handlePurchase(booster)}
+                  disabled={!canAfford || isMaxLevel}
+                  className={`w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md ${isMaxLevel
+                    ? 'bg-white/5 text-gray-500 cursor-not-allowed'
+                    : canAfford
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-900/40'
+                      : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                    }`}
+                >
+                  {isMaxLevel ? (
+                    <span className='flex items-center justify-center gap-1.5 opacity-50'>
+                      <Lock size={12} /> MAXED
+                    </span>
+                  ) : isOwned ? (
+                    <span className='flex items-center justify-center gap-1.5'>
+                      UPGRADE • {booster.cost.toLocaleString()}
+                    </span>
+                  ) : (
+                    <span className='flex items-center justify-center gap-1.5'>
+                      PURCHASE • {booster.cost.toLocaleString()}
+                    </span>
+                  )}
+                </motion.button>
+              </motion.div>
+            )
+          })}
+        </div>
+
+        {/* Tips Section - Compact */}
+        <div className='mt-4 bg-blue-600/10 rounded-2xl p-4 border border-blue-400/20'>
+          <h3 className='text-[10px] font-black text-white mb-2 flex items-center gap-1.5 uppercase tracking-widest'>
+            <Zap className='w-3.5 h-3.5 text-yellow-400' />
+            UPGRADE TIPS
+          </h3>
+          <ul className='text-[9px] text-gray-500 font-bold space-y-1.5 px-1'>
+            <li className="flex items-center gap-2">• <span className="text-gray-400">Costs increase by 50% each level</span></li>
+            <li className="flex items-center gap-2">• <span className="text-gray-400">Upgrades stack for maximum output</span></li>
+            <li className="flex items-center gap-2">• <span className="text-gray-400">Prioritize Coin Multiplier first</span></li>
+          </ul>
+        </div>
       </div>
     </div>
   )
