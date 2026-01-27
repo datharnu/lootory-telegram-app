@@ -1,302 +1,307 @@
 "use client";
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Gift, Check, Clock, Coins, ExternalLink, Calendar } from 'lucide-react'
+import { Gift, Check, Clock, Coins, ExternalLink, Calendar, Loader2, TrendingUp, Sparkles } from 'lucide-react'
+import { apiRequest } from '@/lib/api'
 
 interface Task {
   id: number
   title: string
   description: string
-  image: string
-  reward: number
-  completed: boolean
-  type: 'social' | 'daily' | 'special'
+  icon: string
+  coinReward: number
+  xpReward: number
+  taskType: 'social' | 'game' | 'referral' | 'special'
+  actionUrl?: string | null
+  status: 'idle' | 'pending' | 'completed'
+  isCompleted: boolean
+  startTime: string | null
+  completedAt: string | null
+  coinsEarned: number | null
 }
 
 interface DailyReward {
   day: number
-  reward: number
-  claimed: boolean
-  available: boolean
+  coinReward: number
+  isClaimed: boolean
+  claimedAt: string | null
+  isClaimable: boolean
 }
 
 export default function TasksPage() {
-  const [coins, setCoins] = useState(12500)
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: 1,
-      title: 'Follow Lootory on X',
-      description: 'Follow our official Twitter account',
-      image: '/X.svg',
-      reward: 500,
-      completed: false,
-      type: 'social'
-    },
-    {
-      id: 2,
-      title: 'Follow Founder',
-      description: 'Follow the founder on X',
-      image: '/X.svg',
-      reward: 300,
-      completed: false,
-      type: 'social'
-    },
-    {
-      id: 3,
-      title: 'Subscribe to YouTube',
-      description: 'Subscribe to our YouTube channel',
-      image: '/YouTube.svg',
-      reward: 400,
-      completed: false,
-      type: 'social'
-    },
-    {
-      id: 4,
-      title: 'Follow on LinkedIn',
-      description: 'Connect with us on LinkedIn',
-      image: '/LinkedIn.svg',
-      reward: 350,
-      completed: false,
-      type: 'social'
-    },
-    {
-      id: 5,
-      title: 'Join Telegram Channel',
-      description: 'Join our official Telegram channel',
-      image: '/file.svg',
-      reward: 600,
-      completed: false,
-      type: 'social'
-    },
-    {
-      id: 6,
-      title: 'Share with Friends',
-      description: 'Invite 3 friends to join',
-      image: '/invite.svg',
-      reward: 1000,
-      completed: false,
-      type: 'special'
-    },
-  ])
-
-  const [dailyRewards, setDailyRewards] = useState<DailyReward[]>([
-    { day: 1, reward: 100, claimed: false, available: true },
-    { day: 2, reward: 200, claimed: false, available: false },
-    { day: 3, reward: 300, claimed: false, available: false },
-    { day: 4, reward: 400, claimed: false, available: false },
-    { day: 5, reward: 500, claimed: false, available: false },
-    { day: 6, reward: 600, claimed: false, available: false },
-    { day: 7, reward: 1000, claimed: false, available: false },
-  ])
-
+  const [coins, setCoins] = useState(0)
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [dailyRewards, setDailyRewards] = useState<DailyReward[]>([])
   const [currentStreak, setCurrentStreak] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [now, setNow] = useState(Date.now())
 
-  const handleTaskComplete = (taskId: number) => {
-    const task = tasks.find(t => t.id === taskId)
-    if (task && !task.completed) {
-      setTasks(prev => prev.map(t => 
-        t.id === taskId ? { ...t, completed: true } : t
-      ))
-      setCoins(prev => prev + task.reward)
+  // Update "now" every second for countdowns
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Fetch user balance and stats
+  const fetchUserBalance = async () => {
+    try {
+      const response = await apiRequest('/tasks/balance')
+      if (response.success) {
+        setCoins(Number(response.data.currentBalance))
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch balance:', err)
     }
   }
 
-  const handleDailyReward = (day: number) => {
-    const reward = dailyRewards.find(r => r.day === day)
-    if (reward && reward.available && !reward.claimed) {
-      setDailyRewards(prev => prev.map(r => 
-        r.day === day ? { ...r, claimed: true } : r
-      ))
-      setCoins(prev => prev + reward.reward)
-      setCurrentStreak(prev => prev + 1)
-      
-      // Unlock next day
-      if (day < 7) {
-        setDailyRewards(prev => prev.map(r => 
-          r.day === day + 1 ? { ...r, available: true } : r
-        ))
+  // Fetch tasks
+  const fetchTasks = async () => {
+    try {
+      const response = await apiRequest('/tasks')
+      if (response.success) {
+        setTasks(response.data.tasks)
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch tasks:', err)
+      setError('Failed to load tasks')
+    }
+  }
+
+  // Fetch daily rewards
+  const fetchDailyRewards = async () => {
+    try {
+      const response = await apiRequest('/daily-rewards')
+      if (response.success) {
+        setDailyRewards(response.data.rewards)
+        setCurrentStreak(response.data.currentStreak)
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch daily rewards:', err)
+      setError('Failed to load daily rewards')
+    }
+  }
+
+  // Initial data load
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true)
+      await Promise.all([
+        fetchUserBalance(),
+        fetchTasks(),
+        fetchDailyRewards()
+      ])
+      setIsLoading(false)
+    }
+    loadData()
+  }, [])
+
+  const handleTaskAction = async (task: Task) => {
+    if (task.isCompleted) return
+
+    if (task.status === 'idle') {
+      try {
+        // Step 1: Start Task
+        const response = await apiRequest('/tasks/start', {
+          method: 'POST',
+          body: JSON.stringify({ taskId: task.id })
+        })
+
+        if (response.success) {
+          // Open Link
+          if (task.actionUrl) window.open(task.actionUrl, '_blank')
+
+          // Update local status
+          setTasks(prev => prev.map(t =>
+            t.id === task.id ? { ...t, status: 'pending', startTime: new Date().toISOString() } : t
+          ))
+        }
+      } catch (err: any) {
+        alert(err.message || 'Failed to start task')
+      }
+    } else if (task.status === 'pending') {
+      try {
+        // Step 2: Verify Task
+        const response = await apiRequest('/tasks/complete', {
+          method: 'POST',
+          body: JSON.stringify({ taskId: task.id })
+        })
+
+        if (response.success) {
+          setTasks(prev => prev.map(t =>
+            t.id === task.id ? { ...t, status: 'completed', isCompleted: true, coinsEarned: Number(response.data.coinsEarned) } : t
+          ))
+          setCoins(Number(response.data.newBalance))
+        }
+      } catch (err: any) {
+        alert(err.message || 'Verification failed. Try again in a few seconds.')
       }
     }
   }
 
-  const completedTasks = tasks.filter(t => t.completed).length
-  const totalRewards = tasks.reduce((sum, task) => sum + (task.completed ? task.reward : 0), 0)
+  const handleDailyReward = async (day: number) => {
+    const reward = dailyRewards.find(r => r.day === day)
+    if (!reward || !reward.isClaimable || reward.isClaimed) return
+
+    try {
+      const response = await apiRequest('/daily-rewards/claim', {
+        method: 'POST',
+        body: JSON.stringify({ day })
+      })
+
+      if (response.success) {
+        await Promise.all([
+          fetchDailyRewards(),
+          fetchUserBalance()
+        ])
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to claim reward')
+    }
+  }
+
+  const completedTasks = tasks.filter(t => t.isCompleted).length
+  const totalTaskRewards = tasks.reduce((sum, task) => sum + (task.isCompleted ? task.coinReward : 0), 0)
+
+  if (isLoading) {
+    return (
+      <div className='min-h-screen flex items-center justify-center'>
+        <div className='text-center'>
+          <Loader2 className='w-12 h-12 text-purple-500 animate-spin mx-auto mb-4' />
+          <p className='text-white font-medium'>Loading Lotoory Tasks...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className='min-h-screen pb-24 p-6'>
+    <div className='min-h-screen pb-32 p-6 '>
       {/* Header */}
       <div className='mb-6'>
-        <h1 className='text-3xl font-bold text-white mb-2'>Earn & Rewards</h1>
-        <p className='text-gray-300'>Complete tasks and claim daily rewards</p>
+        <h1 className='text-3xl font-black text-white mb-2 italic tracking-tighter'>EARN & WIN</h1>
+        <p className='text-purple-300 font-medium'>Level up your balance with social power</p>
       </div>
 
       {/* Balance Display */}
-      <div className='bg-gradient-to-r from-purple-600/30 to-pink-600/30 rounded-2xl p-4 mb-6 border border-purple-400/20'>
+      <div className='bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-5 mb-8 shadow-inner'>
         <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <div className='bg-yellow-400/20 p-2 rounded-full'>
-              <Coins className='w-6 h-6 text-yellow-400' />
+          <div className='flex items-center gap-4'>
+            <div className='bg-yellow-400/20 p-3 rounded-2xl shadow-[0_0_15px_rgba(234,179,8,0.2)]'>
+              <Coins className='w-7 h-7 text-yellow-400' />
             </div>
             <div>
-              <p className='text-xs text-gray-300'>Your Coins</p>
-              <p className='text-2xl font-bold text-white'>{coins.toLocaleString()}</p>
+              <p className='text-[10px] text-gray-400 font-black uppercase tracking-widest'>Your Loot</p>
+              <p className='text-3xl font-black text-white tracking-tight leading-none'>{coins.toLocaleString()}</p>
             </div>
           </div>
           <div className='text-right'>
-            <p className='text-xs text-gray-300'>Tasks Completed</p>
-            <p className='text-lg font-semibold text-green-400'>{completedTasks} / {tasks.length}</p>
+            <p className='text-[10px] text-purple-400 font-black uppercase tracking-widest'>Progress</p>
+            <p className='text-lg font-black text-green-400 italic'>{completedTasks} / {tasks.length}</p>
           </div>
         </div>
       </div>
 
       {/* Daily Rewards Section */}
-      <div className='mb-8'>
-        <div className='flex items-center justify-between mb-4'>
-          <h2 className='text-xl font-bold text-white flex items-center gap-2'>
+      <div className='mb-10'>
+        <div className='flex items-center justify-between mb-5'>
+          <h2 className='text-xl font-black text-white flex items-center gap-2'>
             <Calendar className='w-5 h-5 text-yellow-400' />
-            Daily Rewards
+            STREAK REWARDS
           </h2>
-          <span className='text-sm text-gray-300'>Streak: {currentStreak} days</span>
+          <span className='px-3 py-1 bg-yellow-400/10 text-yellow-400 rounded-full text-xs font-black border border-yellow-400/20'>
+            {currentStreak} DAY STREAK
+          </span>
         </div>
-        
-        <div className='grid grid-cols-7 gap-2'>
+
+        <div className='grid grid-cols-7 gap-1.5'>
           {dailyRewards.map((reward) => (
             <motion.button
               key={reward.day}
-              whileHover={{ scale: reward.available && !reward.claimed ? 1.1 : 1 }}
+              whileHover={{ scale: reward.isClaimable && !reward.isClaimed ? 1.05 : 1 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleDailyReward(reward.day)}
-              disabled={!reward.available || reward.claimed}
-              className={`relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${
-                reward.claimed
-                  ? 'bg-green-500/20 border-green-400/50'
-                  : reward.available
-                  ? 'bg-gradient-to-br from-yellow-500/30 to-orange-500/30 border-yellow-400/50 hover:shadow-lg hover:shadow-yellow-500/50'
-                  : 'bg-gray-700/30 border-gray-600/50 opacity-50'
-              }`}
+              disabled={!reward.isClaimable || reward.isClaimed}
+              className={`relative flex flex-col items-center justify-center py-4 rounded-2xl border transition-all ${reward.isClaimed
+                ? 'bg-green-500/10 border-green-500/20 opacity-60'
+                : reward.isClaimable
+                  ? 'bg-gradient-to-br from-yellow-500/30 to-orange-500/30 border-yellow-400/40 shadow-lg shadow-yellow-500/10'
+                  : 'bg-white/5 border-white/5 opacity-40'
+                }`}
             >
-              <div className='text-2xl mb-1'>{reward.day}</div>
-              <Gift className={`w-5 h-5 mb-1 ${
-                reward.claimed ? 'text-green-400' : reward.available ? 'text-yellow-400' : 'text-gray-500'
-              }`} />
-              <span className={`text-xs font-bold ${
-                reward.claimed ? 'text-green-400' : reward.available ? 'text-yellow-400' : 'text-gray-500'
-              }`}>
-                {reward.reward}
-              </span>
-              {reward.claimed && (
-                <Check className='absolute top-1 right-1 w-4 h-4 text-green-400' />
-              )}
-              {reward.day === 7 && (
-                <span className='absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold'>
-                  Bonus
-                </span>
-              )}
+              <span className='text-[10px] font-black opacity-60 mb-1'>D{reward.day}</span>
+              <Gift className={`w-5 h-5 mb-1 ${reward.isClaimed ? 'text-green-400' : reward.isClaimable ? 'text-yellow-400' : 'text-gray-500'}`} />
+              <span className='text-[10px] font-black'>+{reward.coinReward}</span>
+              {reward.isClaimed && <Check className='absolute top-1 right-1 w-3 h-3 text-green-400' />}
             </motion.button>
           ))}
         </div>
-        <p className='text-xs text-gray-400 mt-3 text-center'>
-          Claim your daily reward to maintain your streak!
-        </p>
       </div>
 
       {/* Tasks Section */}
       <div>
-        <h2 className='text-xl font-bold text-white mb-4 flex items-center gap-2'>
-          <Gift className='w-5 h-5 text-purple-400' />
-          Complete Tasks
+        <h2 className='text-xl font-black text-white mb-6 flex items-center gap-2'>
+          <Sparkles className='w-5 h-5 text-purple-400' />
+          SOCIAL MISSIONS
         </h2>
-        
-        <div className='space-y-3'>
-          {tasks.map((task, index) => (
-            <motion.div
-              key={task.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`bg-gradient-to-r ${
-                task.completed 
-                  ? 'from-green-600/20 to-emerald-600/20 border-green-400/30' 
-                  : 'from-purple-600/20 to-pink-600/20 border-purple-400/30'
-              } rounded-2xl p-4 border-2`}
-            >
-              <div className='flex items-center gap-4'>
-                <div className={`p-3 rounded-xl ${
-                  task.completed ? 'bg-green-500/30' : 'bg-purple-500/30'
-                }`}>
-                  <Image 
-                    src={task.image} 
-                    alt={task.title} 
-                    width={40} 
-                    height={40} 
-                    className='w-10 h-10 object-contain' 
-                  />
-                </div>
-                
-                <div className='flex-1'>
-                  <div className='flex items-center gap-2 mb-1'>
-                    <h3 className='text-lg font-bold text-white'>{task.title}</h3>
-                    {task.completed && (
-                      <Check className='w-5 h-5 text-green-400' />
-                    )}
+
+        <div className='space-y-4'>
+          {tasks.map((task, index) => {
+            const isPending = task.status === 'pending';
+            const startTime = task.startTime ? new Date(task.startTime).getTime() : 0;
+            const remaining = Math.max(0, Math.ceil(15 - (now - startTime) / 1000));
+            const canVerify = isPending && remaining === 0;
+
+            return (
+              <motion.div
+                key={task.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className={`relative overflow-hidden bg-white/5 backdrop-blur-sm border-2 rounded-[2rem] p-5 transition-all ${task.isCompleted ? 'border-green-500/20' : 'border-white/5'}`}
+              >
+                <div className='flex items-center gap-5'>
+                  <div className={`p-4 rounded-2xl ${task.isCompleted ? 'bg-green-500/10' : 'bg-purple-500/10'}`}>
+                    <div className='text-4xl'>{task.icon}</div>
                   </div>
-                  <p className='text-sm text-gray-300 mb-2'>{task.description}</p>
-                  <div className='flex items-center gap-2'>
-                    <span className='text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded flex items-center gap-1'>
-                      <Coins className='w-3 h-3' />
-                      +{task.reward} coins
-                    </span>
-                    {task.type === 'special' && (
-                      <span className='text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded'>
-                        Special
+
+                  <div className='flex-1'>
+                    <h3 className='text-lg font-black text-white leading-tight mb-1'>{task.title}</h3>
+                    <div className='flex items-center gap-3'>
+                      <span className='text-[10px] font-black text-yellow-500 uppercase flex items-center gap-1'>
+                        <Coins className='w-3 h-3' /> +{task.coinReward}
                       </span>
-                    )}
+                      <span className='text-[10px] font-black text-blue-400 uppercase flex items-center gap-1'>
+                        <TrendingUp className='w-3 h-3' /> +{task.xpReward} XP
+                      </span>
+                    </div>
                   </div>
+
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleTaskAction(task)}
+                    disabled={task.isCompleted || (isPending && !canVerify)}
+                    className={`px-5 py-3 rounded-2xl font-black text-xs transition-all flex items-center gap-2 shadow-lg ${task.isCompleted
+                      ? 'bg-green-500/20 text-green-400 border border-green-500/20'
+                      : isPending
+                        ? canVerify
+                          ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-blue-500/20'
+                          : 'bg-white/10 text-white/40 cursor-wait'
+                        : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/20'
+                      }`}
+                  >
+                    {task.isCompleted ? (
+                      <><Check size={16} /> DONE</>
+                    ) : isPending ? (
+                      canVerify ? 'VERIFY' : `WAIT ${remaining}s`
+                    ) : (
+                      <><ExternalLink size={14} /> START</>
+                    )}
+                  </motion.button>
                 </div>
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleTaskComplete(task.id)}
-                  disabled={task.completed}
-                  className={`px-4 py-2 rounded-xl font-semibold transition-all flex items-center gap-2 ${
-                    task.completed
-                      ? 'bg-green-500/30 text-green-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-lg hover:shadow-purple-500/50'
-                  }`}
-                >
-                  {task.completed ? (
-                    <>
-                      <Check className='w-4 h-4' />
-                      Completed
-                    </>
-                  ) : (
-                    <>
-                      <ExternalLink className='w-4 h-4' />
-                      Complete
-                    </>
-                  )}
-                </motion.button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* Stats Footer */}
-      <div className='mt-8 bg-blue-600/20 rounded-2xl p-4 border border-blue-400/30'>
-        <div className='grid grid-cols-2 gap-4'>
-          <div>
-            <p className='text-xs text-gray-300 mb-1'>Total Earned</p>
-            <p className='text-xl font-bold text-green-400'>{totalRewards.toLocaleString()} coins</p>
-          </div>
-          <div>
-            <p className='text-xs text-gray-300 mb-1'>Completion Rate</p>
-            <p className='text-xl font-bold text-purple-400'>
-              {Math.round((completedTasks / tasks.length) * 100)}%
-            </p>
-          </div>
+              </motion.div>
+            )
+          })}
         </div>
       </div>
     </div>
