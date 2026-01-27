@@ -219,32 +219,32 @@ export default function TelegramMiniApp() {
   const energyPercentage = (energy / maxEnergy) * 100
 
   return (
-    <div className='h-dvh flex flex-col overflow-hidden px-4 pt-[84px] pb-[99px]'>
+    <div className='h-[calc(80vh-56px)] flex flex-col overflow-hidden px-4 mt-18 mb-20'>
       {/* Persistent Debug Overlay - Minimal */}
       <div className="fixed top-2 right-2 z-[60]">
         {!showConsole ? (
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setShowConsole(true)}
-            className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 text-white/40 shadow-lg"
+            className="bg-black/40 backdrop-blur-md p-1.5 rounded-full border border-white/10 text-white/40 shadow-lg"
           >
-            <Bug size={16} />
+            <Bug size={14} />
           </motion.button>
         ) : (
-          <div className={`bg-black/95 text-[10px] text-green-400 font-mono rounded-xl border border-white/10 overflow-hidden shadow-2xl transition-all w-56 ${isMinimized ? 'h-8' : 'h-40'}`}>
-            <div className="flex justify-between items-center p-2 bg-white/5 border-b border-white/5">
-              <span className="font-bold flex items-center gap-1 opacity-50"><Bug size={12} /> DEBUG</span>
+          <div className={`bg-black/95 text-[10px] text-green-400 font-mono rounded-xl border border-white/10 overflow-hidden shadow-2xl transition-all w-48 ${isMinimized ? 'h-8' : 'h-32'}`}>
+            <div className="flex justify-between items-center p-1.5 bg-white/5 border-b border-white/5">
+              <span className="font-bold flex items-center gap-1 opacity-50 text-[8px]"><Bug size={10} /> DEBUG</span>
               <div className="flex gap-2">
                 <button onClick={() => setIsMinimized(!isMinimized)} className="text-white/40 hover:text-white">
-                  {isMinimized ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  {isMinimized ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                 </button>
                 <button onClick={() => setShowConsole(false)} className="text-white/40 hover:text-red-400">
-                  <X size={14} />
+                  <X size={12} />
                 </button>
               </div>
             </div>
             {!isMinimized && (
-              <div className="p-2 overflow-y-auto h-28 flex flex-col-reverse custom-scrollbar">
+              <div className="p-1.5 overflow-y-auto h-24 flex flex-col-reverse custom-scrollbar text-[8px]">
                 {debugLog.length === 0 ? <div>Waiting for logs...</div> : debugLog.map((log, i) => <div key={i} className="mb-0.5 border-l border-green-500/40 pl-1">{log}</div>)}
               </div>
             )}
@@ -255,8 +255,8 @@ export default function TelegramMiniApp() {
       {isLoading && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
           <div className="text-center">
-            <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
-            <p className="text-white text-lg font-medium">Lotoory is loading...</p>
+            <Loader2 className="w-10 h-10 text-purple-500 animate-spin mx-auto mb-4" />
+            <p className="text-white text-base font-medium">Lotoory is loading...</p>
           </div>
         </div>
       )}
@@ -269,53 +269,53 @@ export default function TelegramMiniApp() {
       />
 
       {/* Top Section: Profile & Dashboard (Grown) */}
-      <div className="flex flex-col gap-3 mb-4 flex-shrink-0">
-        <div className="flex items-center justify-between bg-white/5 backdrop-blur-md rounded-[1.5rem] p-4 border border-white/10 shadow-lg">
-          <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-2 mb-2 flex-shrink-0">
+        <div className="flex items-center justify-between bg-white/5 backdrop-blur-md rounded-[1.2rem] p-3 border border-white/10 shadow-lg">
+          <div className="flex items-center gap-2.5">
             <div className="relative">
               <Image
                 src="/avatar.jpg"
                 alt="avatar"
-                width={48}
-                height={48}
-                className='rounded-2xl w-12 h-12 object-cover border-2 border-white/20'
+                width={40}
+                height={40}
+                className='rounded-xl w-10 h-10 object-cover border-2 border-white/20'
               />
-              <div className="absolute -bottom-1.5 -right-1.5 bg-gradient-to-br from-yellow-400 to-orange-500 text-black text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-black shadow-lg">
+              <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-yellow-400 to-orange-500 text-black text-[8px] font-black px-1 py-0.5 rounded-full border border-black shadow-lg">
                 {level}
               </div>
             </div>
             <div>
-              <h2 className='text-base font-black text-white leading-none flex items-center gap-1.5 mb-1'>
+              <h2 className='text-sm font-black text-white leading-none flex items-center gap-1.5 mb-1'>
                 {user?.username || "Guest"}
-                {level > 5 && <Crown size={14} className="text-yellow-400" />}
+                {level > 5 && <Crown size={12} className="text-yellow-400" />}
               </h2>
-              <span className="text-[10px] text-purple-400 font-black uppercase tracking-widest block bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20 w-fit">
+              <span className="text-[8px] text-purple-400 font-black uppercase tracking-widest block bg-purple-500/10 px-1.5 py-0.5 rounded-full border border-purple-500/20 w-fit">
                 {level < 5 ? 'Novice' : level < 15 ? 'Warrior' : 'Elite'}
               </span>
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-1">
-            <div className='flex items-center gap-1.5 bg-yellow-400/20 px-3 py-1 rounded-full border border-yellow-400/30'>
-              <Coins className='w-4 h-4 text-yellow-400' />
+          <div className="flex flex-col items-end gap-0.5">
+            <div className='flex items-center gap-1 bg-yellow-400/20 px-2 py-0.5 rounded-full border border-yellow-400/30'>
+              <Coins className='w-3 h-3 text-yellow-400' />
               <motion.span
                 key={coins}
-                className='text-lg font-black text-white italic tracking-tight'
+                className='text-base font-black text-white italic tracking-tight'
               >
                 {coins.toLocaleString()}
               </motion.span>
             </div>
-            <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest">Balance</span>
+            <span className="text-[8px] text-gray-500 font-black uppercase tracking-widest">Balance</span>
           </div>
         </div>
 
         {/* Experience Bar - Centerpiece (Thicker) */}
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-inner">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em]">Progression</span>
-            <span className="text-[10px] text-purple-400 font-black tracking-widest">{xp.toLocaleString()} / {xpToNextLevel.toLocaleString()} XP</span>
+        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-3 shadow-inner">
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="text-[8px] text-gray-400 font-black uppercase tracking-[0.1em]">Progression</span>
+            <span className="text-[8px] text-purple-400 font-black tracking-widest">{xp.toLocaleString()} / {xpToNextLevel.toLocaleString()} XP</span>
           </div>
-          <div className='relative w-full h-3 bg-black/50 rounded-full overflow-hidden p-[2px] border border-white/10'>
+          <div className='relative w-full h-2 bg-black/50 rounded-full overflow-hidden p-[1px] border border-white/10'>
             <motion.div
               className='h-full relative rounded-full'
               initial={{ width: 0 }}
@@ -330,27 +330,27 @@ export default function TelegramMiniApp() {
       </div>
 
       {/* Main Tap Area - Dominant focus (Larger Button) */}
-      <div className='flex-1 flex flex-col justify-center items-center relative py-6'>
+      <div className='flex-1 flex flex-col justify-center items-center relative py-2'>
         {/* Decorative background glows (Enhanced) */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-purple-600/15 blur-[80px] rounded-full pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-pink-600/10 blur-[60px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-purple-600/10 blur-[60px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-pink-600/5 blur-[40px] rounded-full pointer-events-none" />
 
         <motion.button
-          whileTap={{ scale: 0.88 }}
+          whileTap={{ scale: 0.85 }}
           onClick={handleTap}
           className="relative z-10 flex items-center justify-center rounded-full p-2 group"
           aria-label="Tap to Earn"
         >
           {/* Outer Pulse Ring */}
-          <div className="absolute inset-0 rounded-full border-2 border-white/5 group-active:border-purple-500/20 scale-125 transition-all" />
+          <div className="absolute inset-0 rounded-full border border-white/5 group-active:border-purple-500/10 scale-110 transition-all" />
 
-          <div className="relative p-2 bg-gradient-to-tr from-white/10 to-white/20 rounded-full backdrop-blur-md shadow-[0_0_60px_rgba(168,85,247,0.2)] active:shadow-none transition-all border border-white/20">
+          <div className="relative p-1.5 bg-gradient-to-tr from-white/10 to-white/20 rounded-full backdrop-blur-md shadow-[0_0_40px_rgba(168,85,247,0.15)] active:shadow-none transition-all border border-white/10">
             <Image
               src="/Tap.png"
               alt="tap"
-              width={240}
-              height={240}
-              className="w-52 h-52 xs:w-64 xs:h-64 object-contain drop-shadow-[0_0_25px_rgba(255,255,255,0.3)] group-hover:scale-105 transition-transform"
+              width={180}
+              height={180}
+              className="w-40 h-40 xs:w-48 xs:h-48 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] group-hover:scale-105 transition-transform"
             />
           </div>
 
@@ -358,11 +358,11 @@ export default function TelegramMiniApp() {
             {floatingCoins.map((coin) => (
               <motion.div
                 key={coin.id}
-                initial={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-                animate={{ opacity: 0, x: coin.x, y: coin.y - 80, scale: 1.2 }}
+                initial={{ opacity: 1, x: 0, y: 0, scale: 0.8 }}
+                animate={{ opacity: 0, x: coin.x * 0.8, y: coin.y * 0.8 - 60, scale: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="absolute text-yellow-400 font-black text-2xl pointer-events-none z-20 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="absolute text-yellow-400 font-black text-xl pointer-events-none z-20 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
               >
                 +{coinsPerTap}
               </motion.div>
@@ -370,27 +370,24 @@ export default function TelegramMiniApp() {
           </AnimatePresence>
         </motion.button>
 
-        <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500 font-black uppercase tracking-[0.25em] flex items-center gap-2">
-            <Star size={12} className="text-yellow-400 animate-pulse" />
+        <div className="mt-4 text-center">
+          <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] flex items-center gap-1.5">
+            <Star size={10} className="text-yellow-400 animate-pulse" />
             REWARD: <span className="text-green-400">+{coinsPerTap}C / +2XP</span>
-            <Star size={12} className="text-yellow-400 animate-pulse" />
+            <Star size={10} className="text-yellow-400 animate-pulse" />
           </p>
         </div>
       </div>
 
-      {/* Bottom Section: Energy & Quick Actions */}
-      <div className="mt-auto flex flex-col gap-4 pb-4">
-        {/* Energy Bar (Thicker) */}
-        <div className='bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-white/10 shadow-lg'>
-          <div className='flex items-center justify-between mb-2'>
-            <div className='flex items-center gap-2'>
-              <Zap className='w-4 h-4 text-yellow-400 fill-yellow-400/20' />
-              <span className='text-xs text-white font-black uppercase tracking-widest'>Energy</span>
-            </div>
-            <span className='text-xs text-white font-black'>{energy} <span className="text-gray-500">/ {maxEnergy}</span></span>
+      {/* Bottom Section: Unified Compact Dock */}
+      <div className="mt-auto mb-2 flex-shrink-0 bg-black/40 backdrop-blur-md rounded-[1.2rem] p-2 border border-white/10 shadow-lg">
+        {/* Compact Energy Row */}
+        <div className='flex items-center gap-3 px-1.5 mb-2'>
+          <div className='flex items-center gap-1 flex-shrink-0'>
+            <Zap className='w-3 h-3 text-yellow-400 fill-yellow-400/20' />
+            <span className='text-[10px] text-white font-black tracking-tighter'>{energy}<span className="text-gray-500">/{maxEnergy}</span></span>
           </div>
-          <div className='w-full bg-white/5 rounded-full h-2.5 overflow-hidden border border-white/5'>
+          <div className='flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5'>
             <motion.div
               className='h-full bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 bg-[length:200%_100%]'
               initial={{ width: 0 }}
@@ -402,27 +399,27 @@ export default function TelegramMiniApp() {
           </div>
         </div>
 
-        {/* Quick Actions Grid (Grown buttons) */}
-        <div className='grid grid-cols-2 gap-3'>
+        {/* Compact Quick Actions Grid */}
+        <div className='grid grid-cols-2 gap-2'>
           <Link href="/boosters">
             <motion.div
               whileTap={{ scale: 0.95 }}
-              className='bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl p-4 text-center border border-white/20 shadow-xl shadow-purple-900/40 relative overflow-hidden group'
+              className='bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl py-2.5 text-center border border-white/10 shadow-md relative overflow-hidden group'
             >
               <div className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity" />
-              <p className='text-xs text-white font-black flex items-center justify-center gap-2 tracking-widest'>
-                <TrendingUp size={16} /> UPGRADE
+              <p className='text-[9px] text-white font-black flex items-center justify-center gap-1.5 tracking-tight uppercase'>
+                <TrendingUp size={12} /> UPGRADE
               </p>
             </motion.div>
           </Link>
           <Link href="/tasks">
             <motion.div
               whileTap={{ scale: 0.95 }}
-              className='bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl p-4 text-center border border-white/20 shadow-xl shadow-blue-900/40 relative overflow-hidden group'
+              className='bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl py-2.5 text-center border border-white/10 shadow-md relative overflow-hidden group'
             >
               <div className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity" />
-              <p className='text-xs text-white font-black flex items-center justify-center gap-2 tracking-widest'>
-                <Gift size={16} /> EARN LOOT
+              <p className='text-[9px] text-white font-black flex items-center justify-center gap-1.5 tracking-tight uppercase'>
+                <Gift size={12} /> EARN LOOT
               </p>
             </motion.div>
           </Link>
