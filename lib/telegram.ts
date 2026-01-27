@@ -1,12 +1,14 @@
-import WebApp from "@twa-dev/sdk";
+const WebApp = typeof window !== 'undefined' ? require('@twa-dev/sdk').default : null;
 
 export const telegram = WebApp;
 
 export const initTelegram = () => {
-  telegram.ready();
-  telegram.expand();
+  if (telegram) {
+    telegram.ready();
+    telegram.expand();
+  }
 };
 
 export const getInitData = () => {
-  return telegram.initData;
+  return telegram?.initData || '';
 };
