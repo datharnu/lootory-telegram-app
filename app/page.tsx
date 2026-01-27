@@ -8,28 +8,24 @@ import { getInitData, initTelegram } from '@/lib/telegram'
 import { loginWithTelegram, apiRequest, updateUserStats } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import LevelUpModal from '@/components/game/LevelUpModal'
+import LoadingScreen from '@/components/shared/LoadingScreen'
+import { useApp } from '@/context/AppContext'
 
 export default function TelegramMiniApp() {
-  const [coins, setCoins] = useState(0)
-  const [energy, setEnergy] = useState(0)
-  const [maxEnergy, setMaxEnergy] = useState(1000)
+  const { isInitialLoad, setIsInitialLoad, user, setUser, stats, setStats, isDataLoaded, setIsDataLoaded } = useApp()
+
+  // Initialize local state from global context for immediate responsiveness
+  const [coins, setCoins] = useState(stats.coins)
+  const [energy, setEnergy] = useState(stats.energy)
+  const [maxEnergy, setMaxEnergy] = useState(stats.maxEnergy)
   const [tapCount, setTapCount] = useState(0)
-  const [coinsPerTap, setCoinsPerTap] = useState(10)
-  const [level, setLevel] = useState(1)
-  const [xp, setXp] = useState(0)
+  const [coinsPerTap, setCoinsPerTap] = useState(stats.tapPower)
+  const [level, setLevel] = useState(stats.level)
+  const [xp, setXp] = useState(stats.xp)
   const [xpToNextLevel] = useState(1000)
+
   const [floatingCoins, setFloatingCoins] = useState<Array<{ id: number; x: number; y: number }>>([])
-  const [user, setUser] = useState<{
-    username: string;
-    telegramId?: string;
-    coins?: string;
-    level?: number;
-    xp?: number;
-    energy?: number;
-    maxEnergy?: number;
-    tapPower?: number;
-  } | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(!isDataLoaded)
   const [debugLog, setDebugLog] = useState<string[]>([])
   const [showConsole, setShowConsole] = useState(true)
   const [isMinimized, setIsMinimized] = useState(false)
@@ -43,96 +39,121 @@ export default function TelegramMiniApp() {
   const router = useRouter()
 
   // Refs to track last synced values to avoid redundant calls
-  const lastSyncedStats = useRef({ coins: 0, xp: 0, level: 0, energy: 0 });
+  const lastSyncedStats = useRef({ coins: stats.coins, xp: stats.xp, level: stats.level, energy: stats.energy });
+
+  // Update local state if global stats change (e.g. from background sync or other pages)
+  useEffect(() => {
+    if (isDataLoaded) {
+      setCoins(stats.coins);
+      setEnergy(stats.energy);
+      setMaxEnergy(stats.maxEnergy);
+      setCoinsPerTap(stats.tapPower);
+      setLevel(stats.level);
+      setXp(stats.xp);
+    }
+  }, [isDataLoaded]);
+
+  // Sync internal local changes back to global AppContext
+  useEffect(() => {
+    setStats({
+      coins,
+      energy,
+      maxEnergy,
+      tapPower: coinsPerTap,
+      level,
+      xp
+    });
+  }, [coins, energy, maxEnergy, coinsPerTap, level, xp]);
 
   useEffect(() => {
     const authenticate = async () => {
+      // If data is already loaded and we're just returning to this page, don't re-auth blocking-ly
+      if (isDataLoaded) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         addLog("Starting authentication...")
         initTelegram();
         const initData = getInitData();
-        addLog(`initData: ${initData ? "Found (len: " + initData.length + ")" : "Empty"}`);
 
         if (initData) {
-          addLog("Calling /auth/telegram...");
           const authData = await loginWithTelegram(initData);
-          addLog(`Auth success: ${authData.success}`);
           if (authData.success) {
             const userData = authData.data.user;
-            setUser(userData);
-            addLog(`User authenticated: ${userData.username}`);
+            setUser({ username: userData.username, telegramId: userData.telegramId });
 
-            // Sync local game stats with backend
-            if (userData.coins) setCoins(Number(userData.coins));
-            if (userData.level) setLevel(userData.level);
-            if (userData.xp !== undefined) setXp(userData.xp);
-            if (userData.energy !== undefined) setEnergy(userData.energy);
-            if (userData.maxEnergy) setMaxEnergy(userData.maxEnergy);
-            if (userData.tapPower) setCoinsPerTap(userData.tapPower);
-
-            // Initialize lastSyncedStats with fetched data
-            lastSyncedStats.current = {
+            const newStats = {
               coins: Number(userData.coins || 0),
-              xp: userData.xp || 0,
               level: userData.level || 1,
-              energy: userData.energy || 0
+              xp: userData.xp || 0,
+              energy: userData.energy || 1000,
+              maxEnergy: userData.maxEnergy || 1000,
+              tapPower: userData.tapPower || 10
+            };
+
+            setStats(newStats);
+            setIsDataLoaded(true);
+
+            // Sync local refs
+            lastSyncedStats.current = {
+              coins: newStats.coins,
+              xp: newStats.xp,
+              level: newStats.level,
+              energy: newStats.energy
             };
           }
         } else {
-          addLog("No initData, checking for local token...");
           const token = localStorage.getItem("accessToken");
           if (token) {
-            addLog("Token found, calling /auth/user...");
             const userInfo = await apiRequest("/auth/user");
-            addLog(`User Info success: ${userInfo.success}`);
             if (userInfo.success) {
               const userData = userInfo.data;
-              setUser(userData);
+              setUser({ username: userData.username, telegramId: userData.telegramId });
 
-              // Sync local game stats with backend
-              if (userData.coins) setCoins(Number(userData.coins));
-              if (userData.level) setLevel(userData.level);
-              if (userData.xp !== undefined) setXp(userData.xp);
-              if (userData.energy !== undefined) setEnergy(userData.energy);
-              if (userData.maxEnergy) setMaxEnergy(userData.maxEnergy);
-              if (userData.tapPower) setCoinsPerTap(userData.tapPower);
-
-              // Initialize lastSyncedStats with fetched data
-              lastSyncedStats.current = {
+              const newStats = {
                 coins: Number(userData.coins || 0),
-                xp: userData.xp || 0,
                 level: userData.level || 1,
-                energy: userData.energy || 0
+                xp: userData.xp || 0,
+                energy: userData.energy || 1000,
+                maxEnergy: userData.maxEnergy || 1000,
+                tapPower: userData.tapPower || 10
+              };
+
+              setStats(newStats);
+              setIsDataLoaded(true);
+
+              lastSyncedStats.current = {
+                coins: newStats.coins,
+                xp: newStats.xp,
+                level: newStats.level,
+                energy: newStats.energy
               };
             }
           } else {
-            addLog("No token or initData found. Redirecting to dev login...");
-            // Redirect to development login page
             router.push('/dev-login');
             return;
           }
         }
       } catch (error: any) {
         addLog(`❌ Error: ${error.message}`);
-        console.error("Authentication failed:", error);
         setAuthError(error.message || "Failed to connect to server");
       } finally {
         setIsLoading(false);
+        setIsInitialLoad(false);
       }
     };
 
     authenticate();
-  }, []);
+  }, [isDataLoaded]);
 
-  // Refs to track last synced values to avoid redundant calls
+  // Sync data with backend when stats change
   const latestStatsRef = useRef({ coins, xp, level, energy });
-
-  // Update latest stats ref whenever state changes
   useEffect(() => {
     latestStatsRef.current = { coins, xp, level, energy };
   }, [coins, xp, level, energy]);
 
-  // Sync data with backend when stats change
   useEffect(() => {
     if (!user || isLoading) return;
 
@@ -164,7 +185,6 @@ export default function TelegramMiniApp() {
 
     return () => {
       clearTimeout(syncTimeout);
-      // Attempt a quick sync on unmount if there are changes
       const statsToSync = latestStatsRef.current;
       if (
         lastSyncedStats.current.coins !== statsToSync.coins ||
@@ -220,7 +240,7 @@ export default function TelegramMiniApp() {
 
   return (
     <div className='h-[calc(80vh-56px)] flex flex-col overflow-hidden px-4 mt-18 mb-20'>
-      {/* Persistent Debug Overlay - Minimal */}
+      {/* Persistent Debug Overlay */}
       <div className="fixed top-2 right-2 z-[60]">
         {!showConsole ? (
           <motion.button
@@ -252,14 +272,7 @@ export default function TelegramMiniApp() {
         )}
       </div>
 
-      {isLoading && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="text-center">
-            <Loader2 className="w-10 h-10 text-purple-500 animate-spin mx-auto mb-4" />
-            <p className="text-white text-base font-medium">Lotoory is loading...</p>
-          </div>
-        </div>
-      )}
+      {isLoading && isInitialLoad && <LoadingScreen message="Lotoory is loading..." />}
 
       {/* Level Up Reward Modal */}
       <LevelUpModal
@@ -268,7 +281,7 @@ export default function TelegramMiniApp() {
         onClose={() => setShowLevelUp(false)}
       />
 
-      {/* Top Section: Profile & Dashboard (Grown) */}
+      {/* Top Section: Profile & Dashboard */}
       <div className="flex flex-col gap-2 mb-2 flex-shrink-0">
         <div className="flex items-center justify-between bg-white/5 backdrop-blur-md rounded-[1.2rem] p-3 border border-white/10 shadow-lg">
           <div className="flex items-center gap-2.5">
@@ -309,7 +322,7 @@ export default function TelegramMiniApp() {
           </div>
         </div>
 
-        {/* Experience Bar - Centerpiece (Thicker) */}
+        {/* Experience Bar */}
         <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-3 shadow-inner">
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-[8px] text-gray-400 font-black uppercase tracking-[0.1em]">Progression</span>
@@ -329,9 +342,8 @@ export default function TelegramMiniApp() {
         </div>
       </div>
 
-      {/* Main Tap Area - Dominant focus (Larger Button) */}
+      {/* Main Tap Area */}
       <div className='flex-1 flex flex-col justify-center items-center relative py-2'>
-        {/* Decorative background glows (Enhanced) */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-purple-600/10 blur-[60px] rounded-full pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-pink-600/5 blur-[40px] rounded-full pointer-events-none" />
 
@@ -341,7 +353,6 @@ export default function TelegramMiniApp() {
           className="relative z-10 flex items-center justify-center rounded-full p-2 group"
           aria-label="Tap to Earn"
         >
-          {/* Outer Pulse Ring */}
           <div className="absolute inset-0 rounded-full border border-white/5 group-active:border-purple-500/10 scale-110 transition-all" />
 
           <div className="relative p-1.5 bg-gradient-to-tr from-white/10 to-white/20 rounded-full backdrop-blur-md shadow-[0_0_40px_rgba(168,85,247,0.15)] active:shadow-none transition-all border border-white/10">
@@ -381,7 +392,6 @@ export default function TelegramMiniApp() {
 
       {/* Bottom Section: Unified Compact Dock */}
       <div className="mt-auto mb-2 flex-shrink-0 bg-black/40 backdrop-blur-md rounded-[1.2rem] p-2 border border-white/10 shadow-lg">
-        {/* Compact Energy Row */}
         <div className='flex items-center gap-3 px-1.5 mb-2'>
           <div className='flex items-center gap-1 flex-shrink-0'>
             <Zap className='w-3 h-3 text-yellow-400 fill-yellow-400/20' />
@@ -399,7 +409,6 @@ export default function TelegramMiniApp() {
           </div>
         </div>
 
-        {/* Compact Quick Actions Grid */}
         <div className='grid grid-cols-2 gap-2'>
           <Link href="/boosters">
             <motion.div

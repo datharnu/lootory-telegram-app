@@ -1,8 +1,9 @@
 "use client";
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Zap, TrendingUp, Coins, Lock, Check } from 'lucide-react'
+import { useApp } from '@/context/AppContext'
 
 interface Booster {
   id: number
@@ -18,7 +19,14 @@ interface Booster {
 }
 
 export default function BoostersPage() {
-  const [coins, setCoins] = useState(12500)
+  const { stats, setStats } = useApp()
+  // Synchronize local coins with global stats
+  const [coins, setCoins] = useState(stats.coins)
+
+  useEffect(() => {
+    setCoins(stats.coins)
+  }, [stats.coins])
+
   const [boosters, setBoosters] = useState<Booster[]>([
     {
       id: 1,
@@ -96,7 +104,10 @@ export default function BoostersPage() {
 
   const handlePurchase = (booster: Booster) => {
     if (coins >= booster.cost && booster.level < booster.maxLevel) {
-      setCoins(prev => prev - booster.cost)
+      const newBalance = coins - booster.cost;
+      setCoins(newBalance)
+      setStats(prev => ({ ...prev, coins: newBalance }))
+
       setBoosters(prev => prev.map(b =>
         b.id === booster.id
           ? { ...b, owned: true, level: b.level + 1, cost: Math.floor(b.cost * 1.5) }
@@ -107,7 +118,10 @@ export default function BoostersPage() {
 
   const handleUpgrade = (booster: Booster) => {
     if (coins >= booster.cost && booster.level < booster.maxLevel) {
-      setCoins(prev => prev - booster.cost)
+      const newBalance = coins - booster.cost;
+      setCoins(newBalance)
+      setStats(prev => ({ ...prev, coins: newBalance }))
+
       setBoosters(prev => prev.map(b =>
         b.id === booster.id
           ? { ...b, level: b.level + 1, cost: Math.floor(b.cost * 1.5) }
@@ -118,13 +132,11 @@ export default function BoostersPage() {
 
   return (
     <div className='h-dvh flex flex-col overflow-hidden pt-[84px] pb-[99px] px-4'>
-      {/* Header - Shrunk */}
       <div className='mb-3 flex-shrink-0'>
         <h1 className='text-xl font-black text-white italic tracking-tighter'>MINE & UPGRADE</h1>
         <p className='text-[10px] text-purple-300 font-bold uppercase tracking-wider'>Power-up your earnings</p>
       </div>
 
-      {/* Balance Display - Compact */}
       <div className='bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 mb-4 flex-shrink-0 shadow-inner'>
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-2.5'>
@@ -139,9 +151,7 @@ export default function BoostersPage() {
         </div>
       </div>
 
-      {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-4">
-        {/* Boosters Grid - Compact Cards */}
         <div className='grid grid-cols-1 gap-3'>
           {boosters.map((booster, index) => {
             const canAfford = coins >= booster.cost
@@ -182,7 +192,6 @@ export default function BoostersPage() {
                   </div>
                 </div>
 
-                {/* Progress Bar - Shrunk */}
                 {isOwned && !isMaxLevel && (
                   <div className='mb-3'>
                     <div className='w-full bg-black/40 rounded-full h-1 overflow-hidden border border-white/5'>
@@ -195,7 +204,6 @@ export default function BoostersPage() {
                   </div>
                 )}
 
-                {/* Action Button - Compact */}
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={() => isOwned ? handleUpgrade(booster) : handlePurchase(booster)}
@@ -226,7 +234,6 @@ export default function BoostersPage() {
           })}
         </div>
 
-        {/* Tips Section - Compact */}
         <div className='mt-4 bg-blue-600/10 rounded-2xl p-4 border border-blue-400/20'>
           <h3 className='text-[10px] font-black text-white mb-2 flex items-center gap-1.5 uppercase tracking-widest'>
             <Zap className='w-3.5 h-3.5 text-yellow-400' />
