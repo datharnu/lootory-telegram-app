@@ -1,46 +1,57 @@
 "use client";
-import React, { useState } from 'react'
-import Image from 'next/image'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Copy, Check, Users, Coins, TrendingUp, Share2, Gift } from 'lucide-react'
+import { useApp } from '@/context/AppContext'
+import { getReferrals } from '@/lib/api'
+import { shareReferral } from '@/lib/telegram'
 
 export default function InvitePage() {
+  const { user } = useApp()
   const [copied, setCopied] = useState(false)
-  const [referralCode] = useState('LOOTORY2024')
-  const [referralLink] = useState('https://t.me/lootory_bot?start=LOOTORY2024')
+  const [summary, setSummary] = useState({ totalReferrals: 0, totalEarnings: '0' })
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Mock stats
-  const [stats] = useState({
-    totalReferrals: 12,
-    activeReferrals: 8,
-    totalEarned: 15420,
-    todayEarned: 320
-  })
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await getReferrals()
+        if (response.success) {
+          setSummary(response.data.summary)
+        }
+      } catch (error) {
+        console.error("Failed to fetch referral stats:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [])
 
   const handleCopy = () => {
+    if (!user?.id) return
+    const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'LotooryBot'
+    const appName = process.env.NEXT_PUBLIC_APP_NAME || 'lotoory'
+    const referralLink = `https://t.me/${botUsername}/${appName}?startapp=${user.id}`
+
     navigator.clipboard.writeText(referralLink)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Join Lootory - Tap to Earn!',
-          text: 'Join me on Lootory and earn coins by tapping! Use my referral code.',
-          url: referralLink,
-        })
-      } catch (err) {
-        console.log('Error sharing:', err)
-      }
+  const handleShare = () => {
+    if (user?.id) {
+      shareReferral(user.id)
     } else {
-      handleCopy()
+      alert("User not loaded yet. Please try again.")
     }
   }
 
+  const referralCode = user?.id ? user.id.substring(0, 8).toUpperCase() : 'LOADING...'
+
   return (
-    <div className='h-dvh flex flex-col overflow-hidden pt-[84px] pb-[99px] px-4'>
+    <div className='h-dvh flex flex-col overflow-hidden pt-[84px] pb-[99px] px-4 bg-black'>
       {/* Header - Shrunk */}
       <div className='mb-3 flex-shrink-0'>
         <h1 className='text-xl font-black text-white italic tracking-tighter'>INVITE & EARN</h1>
@@ -54,17 +65,17 @@ export default function InvitePage() {
             <Users className='w-3.5 h-3.5 text-blue-400' />
             <p className='text-[8px] text-gray-400 font-black uppercase tracking-widest'>Total Referrals</p>
           </div>
-          <p className='text-lg font-black text-white leading-none'>{stats.totalReferrals}</p>
-          <p className='text-[8px] text-green-500 mt-1 font-bold uppercase'>{stats.activeReferrals} Active</p>
+          <p className='text-lg font-black text-white leading-none'>{summary.totalReferrals}</p>
+          <p className='text-[8px] text-green-500 mt-1 font-bold uppercase'>Joined</p>
         </div>
 
         <div className='bg-gradient-to-br from-yellow-600/20 to-orange-600/20 rounded-2xl p-3 border border-yellow-400/20 shadow-sm'>
           <div className='flex items-center gap-1.5 mb-1'>
             <Coins className='w-3.5 h-3.5 text-yellow-400' />
-            <p className='text-[8px] text-gray-400 font-black uppercase tracking-widest'>Loot Earned</p>
+            <p className='text-[8px] text-gray-400 font-black uppercase tracking-widest'>Total Earned</p>
           </div>
-          <p className='text-lg font-black text-white leading-none'>{stats.totalEarned.toLocaleString()}</p>
-          <p className='text-[8px] text-green-500 mt-1 font-bold uppercase'>+{stats.todayEarned} Today</p>
+          <p className='text-lg font-black text-white leading-none'>{Number(summary.totalEarnings).toLocaleString()}</p>
+          <p className='text-[8px] text-green-500 mt-1 font-bold uppercase'>Commission</p>
         </div>
       </div>
 
@@ -85,35 +96,43 @@ export default function InvitePage() {
             </p>
           </div>
 
-          {/* Referral Code */}
-          <div className='mb-3'>
-            <label className='text-[8px] text-gray-500 font-black uppercase tracking-widest mb-1.5 block'>Your Unique Code</label>
-            <div className='flex items-center gap-1.5'>
-              <div className='flex-1 bg-black/40 rounded-xl p-2.5 border border-white/5'>
-                <p className='text-lg font-black text-white text-center tracking-widest'>
-                  {referralCode}
-                </p>
-              </div>
+          {/* Referral Link & Invite Buttons */}
+          <div className='space-y-3'>
+            <div className='grid grid-cols-2 gap-3'>
               <motion.button
-                whileTap={{ scale: 0.9 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleCopy}
-                className='bg-purple-600 p-2.5 rounded-xl text-white shadow-lg shadow-purple-900/40 border border-purple-400/30'
+                className={`group flex items-center justify-center gap-2 py-3.5 rounded-xl text-[10px] font-black transition-all border ${copied
+                    ? 'bg-green-500/20 border-green-500 text-green-500'
+                    : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                  }`}
               >
-                {copied ? <Check className='w-5 h-5 text-green-400' /> : <Copy className='w-5 h-5' />}
+                {copied ? <Check size={14} className="animate-in zoom-in" /> : <Copy size={14} />}
+                {copied ? 'COPIED!' : 'COPY LINK'}
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleShare}
+                className='flex items-center justify-center gap-2 bg-gradient-to-r from-[#6A00BB] to-[#460A73] py-3.5 rounded-xl text-[10px] font-black text-white shadow-lg shadow-purple-500/20 border border-purple-500/30 hover:brightness-110 active:brightness-90 transition-all'
+              >
+                <Share2 size={14} />
+                INVITE FRIEND
               </motion.button>
             </div>
-          </div>
 
-          {/* Share Button - Large focal point */}
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={handleShare}
-            className='w-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl py-3.5 text-xs font-black text-white flex items-center justify-center gap-2 shadow-xl shadow-purple-900/40 relative overflow-hidden group border border-white/10'
-          >
-            <div className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity" />
-            <Share2 className='w-4 h-4' />
-            SHARE INVITE LINK
-          </motion.button>
+            <div className='bg-black/40 rounded-xl p-2.5 border border-white/5 flex items-center justify-between group'>
+              <div className='flex flex-col'>
+                <span className='text-[8px] text-gray-500 font-bold uppercase tracking-wider'>Your ID</span>
+                <p className='text-xs font-black text-white/50 tracking-widest truncate max-w-[150px]'>
+                  {user?.id || 'LOADING...'}
+                </p>
+              </div>
+              <div className='bg-white/5 px-2 py-1 rounded-lg border border-white/10 text-[8px] text-gray-400 font-bold'>
+                REV {user?.id?.substring(0, 4).toUpperCase() || '####'}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* How It Works - Compact List */}
@@ -141,21 +160,12 @@ export default function InvitePage() {
           </div>
         </div>
 
-        {/* Commission Tiers - Sleek Badge Style */}
+        {/* Reward Card */}
         <div className='bg-gradient-to-r from-yellow-600/10 to-orange-600/10 rounded-2xl p-4 border border-yellow-400/20'>
-          <h3 className='text-xs font-black text-white mb-3'>REWARD TIERS</h3>
-          <div className='space-y-1.5'>
-            {[
-              { range: '1-5 Friends', rate: '20%' },
-              { range: '6-10 Friends', rate: '25%' },
-              { range: '11+ Friends', rate: '30%' }
-            ].map((tier, i) => (
-              <div key={i} className='flex justify-between items-center bg-black/20 rounded-lg px-3 py-1.5 border border-white/5'>
-                <span className='text-[9px] text-gray-400 font-bold'>{tier.range}</span>
-                <span className='text-[10px] text-yellow-400 font-black italic'>{tier.rate} Commission</span>
-              </div>
-            ))}
-          </div>
+          <h3 className='text-xs font-black text-white mb-2'>JOINING BONUS</h3>
+          <p className='text-[10px] text-gray-400 font-bold'>
+            Both you and your friend get <span className='text-yellow-400'>5,000 Coins</span> instantly when they join via your link!
+          </p>
         </div>
       </div>
     </div>

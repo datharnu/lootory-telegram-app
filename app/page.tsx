@@ -82,7 +82,11 @@ export default function TelegramMiniApp() {
           const authData = await loginWithTelegram(initData);
           if (authData.success) {
             const userData = authData.data.user;
-            setUser({ username: userData.username, telegramId: userData.telegramId });
+            setUser({
+              id: userData.id,
+              username: userData.username,
+              telegramId: userData.telegramId
+            });
 
             const newStats = {
               coins: Number(userData.coins || 0),
@@ -110,7 +114,11 @@ export default function TelegramMiniApp() {
             const userInfo = await apiRequest("/auth/user");
             if (userInfo.success) {
               const userData = userInfo.data;
-              setUser({ username: userData.username, telegramId: userData.telegramId });
+              setUser({
+                id: userData.id,
+                username: userData.username,
+                telegramId: userData.telegramId
+              });
 
               const newStats = {
                 coins: Number(userData.coins || 0),

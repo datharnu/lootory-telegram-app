@@ -11,6 +11,7 @@ export interface UserStats {
 }
 
 export interface User {
+    id?: string;
     username: string;
     telegramId?: string;
 }

@@ -68,3 +68,6 @@ export const updateUserStats = async (stats: {
         body: JSON.stringify(stats),
     });
 };
+export const getReferrals = async () => {
+    return apiRequest("/auth/referrals");
+};
