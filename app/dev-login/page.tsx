@@ -16,6 +16,7 @@ export default function DevLogin() {
         email: '',
         password: '',
         confirmPassword: '',
+        referralCode: '',
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,6 +106,7 @@ export default function DevLogin() {
                     email: formData.email,
                     password: formData.password,
                     confirmPassword: formData.confirmPassword,
+                    referralCode: formData.referralCode,
                 }),
             });
 
@@ -117,7 +119,7 @@ export default function DevLogin() {
             if (data.success) {
                 setSuccess('Account created! Please login.');
                 setMode('login');
-                setFormData({ username: '', email: formData.email, password: '', confirmPassword: '' });
+                setFormData({ username: '', email: formData.email, password: '', confirmPassword: '', referralCode: '' });
             }
         } catch (err: any) {
             setError(err.message || 'An error occurred during signup');
@@ -232,23 +234,41 @@ export default function DevLogin() {
                         </div>
 
                         {mode === 'signup' && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Confirm Password
-                                </label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                    <input
-                                        type="password"
-                                        name="confirmPassword"
-                                        value={formData.confirmPassword}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full pl-10 pr-4 py-3 bg-black/30 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                        placeholder="Confirm your password"
-                                    />
+                            <>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Confirm Password
+                                    </label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <input
+                                            type="password"
+                                            name="confirmPassword"
+                                            value={formData.confirmPassword}
+                                            onChange={handleChange}
+                                            required
+                                            className="w-full pl-10 pr-4 py-3 bg-black/30 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                            placeholder="Confirm your password"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Referral Code (Optional)
+                                    </label>
+                                    <div className="relative">
+                                        <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            name="referralCode"
+                                            value={formData.referralCode}
+                                            onChange={handleChange}
+                                            className="w-full pl-10 pr-4 py-3 bg-black/30 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                            placeholder="Enter referral code"
+                                        />
+                                    </div>
+                                </div>
+                            </>
                         )}
 
                         <button
