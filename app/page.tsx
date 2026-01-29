@@ -73,6 +73,14 @@ export default function TelegramMiniApp() {
         const initData = getInitData();
 
         if (initData) {
+          addLog("initData found, length: " + initData.length);
+          if (initData.includes('start_param')) {
+            const startParam = new URLSearchParams(initData).get('start_param');
+            addLog("start_param detected: " + startParam);
+          } else {
+            addLog("No start_param in initData");
+          }
+
           const authData = await loginWithTelegram(initData);
           if (authData.success) {
             const userData = authData.data.user;
