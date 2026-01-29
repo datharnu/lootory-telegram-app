@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Zap, Coins, TrendingUp, Loader2, Bug, ChevronUp, ChevronDown, X, Gift, Star, Crown } from 'lucide-react'
-import { getInitData, initTelegram } from '@/lib/telegram'
+import { getInitData, initTelegram, telegram } from '@/lib/telegram'
 import { loginWithTelegram, apiRequest, updateUserStats } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import LevelUpModal from '@/components/game/LevelUpModal'
@@ -73,12 +73,23 @@ export default function TelegramMiniApp() {
         const initData = getInitData();
 
         if (initData) {
-          addLog("initData found, length: " + initData.length);
-          if (initData.includes('start_param')) {
-            const startParam = new URLSearchParams(initData).get('start_param');
-            addLog("start_param detected: " + startParam);
+          addLog("initData string length: " + initData.length);
+
+          // Try to get start_param from three sources: initData string, initDataUnsafe object, or URL params
+          const unsafeData = (telegram as any)?.initDataUnsafe;
+          const paramFromUnsafe = unsafeData?.start_param;
+          const paramFromQuery = new URLSearchParams(initData).get('start_param');
+
+          const startParam = paramFromUnsafe || paramFromQuery;
+
+          if (startParam) {
+            addLog("✅ start_param FOUND: " + startParam);
           } else {
-            addLog("No start_param in initData");
+            addLog("❌ No start_param found in string or unsafe object");
+            // Log full unsafe object keys for debugging
+            if (unsafeData) {
+              addLog("Available fields: " + Object.keys(unsafeData).join(', '));
+            }
           }
 
           const authData = await loginWithTelegram(initData);
