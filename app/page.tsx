@@ -67,12 +67,6 @@ export default function TelegramMiniApp() {
 
   useEffect(() => {
     const authenticate = async () => {
-      // If data is already loaded and we're just returning to this page, don't re-auth blocking-ly
-      if (isDataLoaded) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
         addLog("Starting authentication...")
         initTelegram();
