@@ -50,7 +50,7 @@ export default function InvitePage() {
     }
   }
 
-  const referralCode = user?.id ? user.id.substring(0, 8).toUpperCase() : 'LOADING...'
+  const displayReferralCode = user?.referralCode || (user?.id ? user.id.substring(0, 8).toUpperCase() : 'LOADING...')
 
   return (
     <div className='h-dvh flex flex-col overflow-hidden pt-[84px] pb-[99px] px-4 bg-black'>
@@ -125,13 +125,13 @@ export default function InvitePage() {
 
             <div className='bg-black/40 rounded-xl p-2.5 border border-white/5 flex items-center justify-between group'>
               <div className='flex flex-col'>
-                <span className='text-[8px] text-gray-500 font-bold uppercase tracking-wider'>Your ID</span>
-                <p className='text-xs font-black text-white/50 tracking-widest truncate max-w-[150px]'>
-                  {user?.id || 'LOADING...'}
+                <span className='text-[8px] text-gray-500 font-bold uppercase tracking-wider'>Your Invite Code</span>
+                <p className='text-xs font-black text-[#D2F10C] tracking-widest truncate max-w-[150px]'>
+                  {displayReferralCode}
                 </p>
               </div>
-              <div className='bg-white/5 px-2 py-1 rounded-lg border border-white/10 text-[8px] text-gray-400 font-bold'>
-                REV {user?.id?.substring(0, 4).toUpperCase() || '####'}
+              <div className='bg-white/5 px-2 py-1 rounded-lg border border-white/10 text-[8px] text-gray-400 font-bold uppercase'>
+                Referral Program
               </div>
             </div>
           </div>
