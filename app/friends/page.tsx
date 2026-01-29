@@ -58,8 +58,9 @@ export default function FriendsPage() {
   }, [])
 
   const handleShare = () => {
-    if (user?.id) {
-      shareReferral(user.id)
+    if (user) {
+      const referralCode = user.referralCode || user.id
+      shareReferral(referralCode as string)
     } else {
       // Fallback if ID is missing (can happen if user not fully loaded)
       alert("User not loaded yet. Please try again.")
@@ -70,7 +71,8 @@ export default function FriendsPage() {
     if (!user?.id) return
     const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'LotooryBot'
     const appName = process.env.NEXT_PUBLIC_APP_NAME || 'lotoory'
-    const referralLink = `https://t.me/${botUsername}/${appName}?startapp=${user.id}`
+    const referralCode = user.referralCode || user.id
+    const referralLink = `https://t.me/${botUsername}/${appName}?startapp=ref_${referralCode}`
 
     navigator.clipboard.writeText(referralLink)
     setCopied(true)

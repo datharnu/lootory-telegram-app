@@ -85,7 +85,8 @@ export default function TelegramMiniApp() {
             setUser({
               id: userData.id,
               username: userData.username,
-              telegramId: userData.telegramId
+              telegramId: userData.telegramId,
+              referralCode: userData.referralCode
             });
 
             const newStats = {
@@ -117,7 +118,8 @@ export default function TelegramMiniApp() {
               setUser({
                 id: userData.id,
                 username: userData.username,
-                telegramId: userData.telegramId
+                telegramId: userData.telegramId,
+                referralCode: userData.referralCode
               });
 
               const newStats = {

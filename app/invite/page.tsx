@@ -33,7 +33,8 @@ export default function InvitePage() {
     if (!user?.id) return
     const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'LotooryBot'
     const appName = process.env.NEXT_PUBLIC_APP_NAME || 'lotoory'
-    const referralLink = `https://t.me/${botUsername}/${appName}?startapp=${user.id}`
+    const referralCode = user.referralCode || user.id
+    const referralLink = `https://t.me/${botUsername}/${appName}?startapp=ref_${referralCode}`
 
     navigator.clipboard.writeText(referralLink)
     setCopied(true)
@@ -41,8 +42,9 @@ export default function InvitePage() {
   }
 
   const handleShare = () => {
-    if (user?.id) {
-      shareReferral(user.id)
+    if (user) {
+      const referralCode = user.referralCode || user.id
+      shareReferral(referralCode as string)
     } else {
       alert("User not loaded yet. Please try again.")
     }
@@ -103,8 +105,8 @@ export default function InvitePage() {
                 whileTap={{ scale: 0.95 }}
                 onClick={handleCopy}
                 className={`group flex items-center justify-center gap-2 py-3.5 rounded-xl text-[10px] font-black transition-all border ${copied
-                    ? 'bg-green-500/20 border-green-500 text-green-500'
-                    : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                  ? 'bg-green-500/20 border-green-500 text-green-500'
+                  : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
                   }`}
               >
                 {copied ? <Check size={14} className="animate-in zoom-in" /> : <Copy size={14} />}
