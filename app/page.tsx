@@ -73,23 +73,18 @@ export default function TelegramMiniApp() {
         const initData = getInitData();
 
         if (initData) {
-          addLog("initData string length: " + initData.length);
+          addLog("initData exists (length: " + initData.length + ")");
 
-          // Try to get start_param from three sources: initData string, initDataUnsafe object, or URL params
           const unsafeData = (telegram as any)?.initDataUnsafe;
-          const paramFromUnsafe = unsafeData?.start_param;
-          const paramFromQuery = new URLSearchParams(initData).get('start_param');
+          addLog("FULL UnsafeData: " + JSON.stringify(unsafeData));
 
-          const startParam = paramFromUnsafe || paramFromQuery;
+          const startParam = unsafeData?.start_param || new URLSearchParams(initData).get('start_param');
 
           if (startParam) {
             addLog("✅ start_param FOUND: " + startParam);
           } else {
-            addLog("❌ No start_param found in string or unsafe object");
-            // Log full unsafe object keys for debugging
-            if (unsafeData) {
-              addLog("Available fields: " + Object.keys(unsafeData).join(', '));
-            }
+            addLog("❌ No start_param found. Available keys: " + Object.keys(unsafeData || {}).join(', '));
+            addLog("URL Hash: " + window.location.hash.substring(0, 50) + "...");
           }
 
           const authData = await loginWithTelegram(initData);

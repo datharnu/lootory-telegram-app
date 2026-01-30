@@ -16,6 +16,7 @@ export const shareReferral = (referralCode: string) => {
   const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'LotooryBot';
   const appName = process.env.NEXT_PUBLIC_APP_NAME || 'lotoory';
   const referralLink = `https://t.me/${botUsername}/${appName}?startapp=ref_${referralCode}`;
+  console.log("Generated Referral Link:", referralLink);
   const text = `Let's roll some gifts! Use my invite link to join the fun. 🤍`;
   const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(text)}`;
 
