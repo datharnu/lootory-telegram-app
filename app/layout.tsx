@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/shared/Header";
 import BottomNav from "@/components/shared/BottomNav";
+import { TonConnectUIProvider } from '@tonconnect/ui-react';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,15 +32,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white min-h-screen flex flex-col items-center`}
       >
-        <AppProvider>
-          <div className="w-full max-w-md min-h-screen flex flex-col relative bg-[#1c0130]">
-            <Header />
-            <main className="flex-1 overflow-hidden">
-              {children}
-            </main>
-            <BottomNav />
-          </div>
-        </AppProvider>
+        <TonConnectUIProvider manifestUrl="https://lotoory.dev/tonconnect-manifest.json">
+          <AppProvider>
+            <div className="w-full max-w-md min-h-screen flex flex-col relative bg-[#1c0130]">
+              <Header />
+              <main className="flex-1 overflow-hidden">
+                {children}
+              </main>
+              <BottomNav />
+            </div>
+          </AppProvider>
+        </TonConnectUIProvider>
       </body>
     </html>
   );

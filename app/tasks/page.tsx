@@ -111,7 +111,13 @@ export default function TasksPage() {
         })
 
         if (response.success) {
-          if (task.actionUrl) window.open(task.actionUrl, '_blank')
+          if (task.title === 'Connect TON Wallet') {
+            // Redirect to wallet page instead of external URL
+            window.location.href = '/wallet'
+          } else if (task.actionUrl) {
+            window.open(task.actionUrl, '_blank')
+          }
+
           setTasks(prev => prev.map(t =>
             t.id === task.id ? { ...t, status: 'pending', startTime: new Date().toISOString() } : t
           ))
@@ -133,7 +139,7 @@ export default function TasksPage() {
           setStats(prev => ({ ...prev, coins: Number(response.data.newBalance) }))
         }
       } catch (err: any) {
-        alert(err.message || 'Verification failed. Try again in a few seconds.')
+        alert(err.message || 'Verification failed. Try again.')
       }
     }
   }
@@ -240,9 +246,10 @@ export default function TasksPage() {
               <div className='space-y-2 pb-4'>
                 {tasks.map((task, index) => {
                   const isPending = task.status === 'pending';
+                  const isWalletTask = task.title === 'Connect TON Wallet';
                   const startTime = task.startTime ? new Date(task.startTime).getTime() : 0;
                   const remaining = Math.max(0, Math.ceil(15 - (now - startTime) / 1000));
-                  const canVerify = isPending && remaining === 0;
+                  const canVerify = isPending && (isWalletTask || remaining === 0);
 
                   return (
                     <motion.div

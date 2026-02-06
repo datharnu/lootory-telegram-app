@@ -75,4 +75,9 @@ export const getReferrals = async () => {
 export const getLeaderboard = async () => {
     return apiRequest("/auth/leaderboard");
 };
-
+export const updateWalletAddress = async (walletAddress: string) => {
+    return apiRequest("/auth/wallet", {
+        method: "PATCH",
+        body: JSON.stringify({ walletAddress }),
+    });
+};

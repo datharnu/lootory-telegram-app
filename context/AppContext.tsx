@@ -15,6 +15,7 @@ export interface User {
     username: string;
     telegramId?: string;
     referralCode?: string;
+    walletAddress?: string;
 }
 
 interface AppContextType {
