@@ -85,7 +85,7 @@ export default function WalletPage() {
   }
 
   return (
-    <div className='h-dvh flex flex-col overflow-hidden pt-[84px] pb-[99px] px-4 bg-gradient-to-b from-[#1c0130] to-black'>
+    <div className='h-dvh overflow-y-auto custom-scrollbar flex flex-col overflow-hidden pt-[84px] pb-[110px] px-4 bg-gradient-to-b from-[#1c0130] to-black'>
       <div className='mb-4 flex-shrink-0 flex justify-between items-end'>
         <div>
           <h1 className='text-2xl font-black text-white italic tracking-tighter leading-tight'>ASSETS</h1>
@@ -200,7 +200,7 @@ export default function WalletPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-4 space-y-4">
+      <div className="flex-1  pr-1 pb-4 space-y-4">
         {/* Info Banner */}
         <div className='bg-blue-500/10 rounded-2xl p-3 border border-blue-500/20 flex gap-3 items-start'>
           <div className='bg-blue-500/20 p-2 rounded-xl'>
