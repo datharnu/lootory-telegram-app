@@ -147,9 +147,9 @@ export default function WalletPage() {
           </div>
 
           <div className='px-1'>
-            {tonAddress ? (
+            {tonAddress || user?.walletAddress ? (
               <p className='text-xs text-white font-mono tracking-tight break-all font-medium'>
-                {formatAddress(tonAddress)}
+                {formatAddress(tonAddress || user?.walletAddress || "")}
               </p>
             ) : (
               <p className='text-[10px] text-gray-500 italic font-medium'>
