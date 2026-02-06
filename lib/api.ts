@@ -71,3 +71,8 @@ export const updateUserStats = async (stats: {
 export const getReferrals = async () => {
     return apiRequest("/auth/referrals");
 };
+
+export const getLeaderboard = async () => {
+    return apiRequest("/auth/leaderboard");
+};
+

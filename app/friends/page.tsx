@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Trophy, Users, Coins, TrendingUp, Crown, Medal, Award, Copy, Check, Share2 } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
-import { getReferrals } from '@/lib/api'
+import { getReferrals, getLeaderboard } from '@/lib/api'
 import { shareReferral } from '@/lib/telegram'
 
 interface Friend {
@@ -16,10 +16,10 @@ interface Friend {
 
 interface LeaderboardEntry {
   rank: number
+  id: string
   name: string
-  avatar: string
+  coins: string | number
   level: number
-  totalCoins: number
   isYou: boolean
 }
 
@@ -29,23 +29,20 @@ export default function FriendsPage() {
   const [referrals, setReferrals] = useState<Friend[]>([])
   const [summary, setSummary] = useState({ totalReferrals: 0, totalEarnings: '0' })
   const [isLoading, setIsLoading] = useState(true)
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true)
   const [copied, setCopied] = useState(false)
 
-  const [leaderboard] = useState<LeaderboardEntry[]>([
-    { rank: 1, name: 'CryptoMaster', avatar: '/avatar.jpg', level: 15, totalCoins: 125000, isYou: false },
-    { rank: 2, name: 'CoinCollector', avatar: '/avatar.jpg', level: 12, totalCoins: 98000, isYou: false },
-    { rank: 3, name: user?.username || 'Earnest', avatar: '/avatar.jpg', level: 3, totalCoins: 12500, isYou: true },
-    { rank: 4, name: 'TapperPro', avatar: '/avatar.jpg', level: 10, totalCoins: 87000, isYou: false },
-    { rank: 5, name: 'LuckyPlayer', avatar: '/avatar.jpg', level: 8, totalCoins: 65000, isYou: false },
-  ])
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [userRank, setUserRank] = useState<LeaderboardEntry | null>(null)
 
   useEffect(() => {
-    const fetchReferrals = async () => {
+    const fetchData = async () => {
+      setIsLoading(true)
       try {
-        const response = await getReferrals()
-        if (response.success) {
-          setReferrals(response.data.referrals)
-          setSummary(response.data.summary)
+        const referralResponse = await getReferrals()
+        if (referralResponse.success) {
+          setReferrals(referralResponse.data.referrals)
+          setSummary(referralResponse.data.summary)
         }
       } catch (error) {
         console.error("Failed to fetch referrals:", error)
@@ -54,8 +51,30 @@ export default function FriendsPage() {
       }
     }
 
-    fetchReferrals()
+    fetchData()
   }, [])
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      setLeaderboardLoading(true)
+      try {
+        const response = await getLeaderboard()
+        if (response.success) {
+          setLeaderboard(response.data.leaderboard)
+          setUserRank(response.data.userRank)
+        }
+      } catch (error) {
+        console.error("Failed to fetch leaderboard:", error)
+      } finally {
+        setLeaderboardLoading(false)
+      }
+    }
+
+    if (activeTab === 'leaderboard') {
+      fetchLeaderboard()
+    }
+  }, [activeTab])
+
 
   const handleShare = () => {
     if (user) {
@@ -230,55 +249,111 @@ export default function FriendsPage() {
           </div>
         )}
 
-        {/* Leaderboard Tab Content remains similar but cleaned up */}
+        {/* Leaderboard Tab Content */}
         {activeTab === 'leaderboard' && (
-          <div className='space-y-2'>
-            {leaderboard.map((entry, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className={`rounded-2xl p-3 border ${entry.isYou
-                  ? 'bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border-yellow-400/40 shadow-md'
-                  : 'bg-white/5 border-white/5'
-                  }`}
-              >
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-3 flex-1 min-w-0'>
-                    <div className='w-6 flex items-center justify-center flex-shrink-0'>
-                      <span className={`text-[10px] font-black ${entry.rank <= 3 ? 'text-yellow-400' : 'text-gray-500'}`}>#{entry.rank}</span>
-                    </div>
-                    <div className='relative flex-shrink-0'>
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black ${entry.isYou ? 'bg-yellow-400 text-black' : 'bg-white/10 text-white'}`}>
-                        {entry.name.substring(0, 1).toUpperCase()}
+          <div className='space-y-4'>
+            {leaderboardLoading ? (
+              <div className='flex justify-center py-8'>
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                  className='w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full'
+                />
+              </div>
+            ) : (
+              <>
+                {/* Your Rank Card (if not in top listing or as a sticky highlight) */}
+                {userRank && (
+                  <div className='mb-4'>
+                    <p className='text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 px-1'>Your Ranking</p>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className='rounded-2xl p-3 border bg-gradient-to-r from-purple-600/40 to-pink-600/40 border-purple-400/40 shadow-lg'
+                    >
+                      <div className='flex items-center justify-between'>
+                        <div className='flex items-center gap-3 flex-1 min-w-0'>
+                          <div className='w-6 flex items-center justify-center flex-shrink-0'>
+                            <span className='text-[10px] font-black text-white'>#{userRank.rank}</span>
+                          </div>
+                          <div className='relative flex-shrink-0'>
+                            <div className='w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black bg-white text-purple-600'>
+                              {userRank.name?.substring(0, 1).toUpperCase()}
+                            </div>
+                          </div>
+                          <div className='flex-1 min-w-0'>
+                            <div className='flex items-center gap-1.5 mb-0.5'>
+                              <h3 className='text-xs font-black text-white truncate'>{userRank.name}</h3>
+                              <span className='text-[7px] bg-white text-purple-600 px-1 py-0.5 rounded-sm font-black uppercase'>You</span>
+                            </div>
+                            <div className='text-[9px] font-bold text-purple-100 flex items-center gap-1.5'>
+                              <span className="font-black">LVL {userRank.level}</span>
+                              <span className='opacity-30'>•</span>
+                              <span className="truncate">{Number(userRank.coins).toLocaleString()} coins</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className='text-right flex-shrink-0'>
+                          <Trophy className='w-4 h-4 text-white ml-auto' />
+                          <p className='text-[8px] text-purple-100 font-black uppercase mt-0.5'>Personal</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className='flex-1 min-w-0'>
-                      <div className='flex items-center gap-1.5 mb-0.5'>
-                        <h3 className='text-xs font-black text-white truncate'>{entry.name}</h3>
-                        {entry.isYou && (
-                          <span className='text-[7px] bg-yellow-400 text-black px-1 py-0.5 rounded-sm font-black uppercase'>You</span>
-                        )}
-                      </div>
-                      <div className='text-[9px] font-bold text-gray-500 flex items-center gap-1.5'>
-                        <span className="text-purple-400">LVL {entry.level}</span>
-                        <span className='opacity-30'>•</span>
-                        <span className="truncate">{entry.totalCoins.toLocaleString()} coins</span>
-                      </div>
-                    </div>
+                    </motion.div>
                   </div>
-                  <div className='text-right flex-shrink-0'>
-                    {entry.rank === 1 && <Crown className='w-4 h-4 text-yellow-400 ml-auto' />}
-                    {entry.rank === 2 && <Medal className='w-4 h-4 text-gray-300 ml-auto' />}
-                    {entry.rank === 3 && <Award className='w-4 h-4 text-orange-400 ml-auto' />}
-                    <p className='text-[8px] text-gray-500 font-black uppercase mt-0.5'>Rank</p>
-                  </div>
+                )}
+
+                <div className='space-y-2'>
+                  <p className='text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 px-1'>Top Players</p>
+                  {leaderboard.map((entry, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className={`rounded-2xl p-3 border ${entry.isYou
+                        ? 'bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border-yellow-400/40 shadow-md'
+                        : 'bg-white/5 border-white/5'
+                        }`}
+                    >
+                      <div className='flex items-center justify-between'>
+                        <div className='flex items-center gap-3 flex-1 min-w-0'>
+                          <div className='w-6 flex items-center justify-center flex-shrink-0'>
+                            <span className={`text-[10px] font-black ${entry.rank <= 3 ? 'text-yellow-400' : 'text-gray-500'}`}>#{entry.rank}</span>
+                          </div>
+                          <div className='relative flex-shrink-0'>
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black ${entry.isYou ? 'bg-yellow-400 text-black' : 'bg-white/10 text-white'}`}>
+                              {entry.name?.substring(0, 1).toUpperCase()}
+                            </div>
+                          </div>
+                          <div className='flex-1 min-w-0'>
+                            <div className='flex items-center gap-1.5 mb-0.5'>
+                              <h3 className='text-xs font-black text-white truncate'>{entry.name}</h3>
+                              {entry.isYou && (
+                                <span className='text-[7px] bg-yellow-400 text-black px-1 py-0.5 rounded-sm font-black uppercase'>You</span>
+                              )}
+                            </div>
+                            <div className='text-[9px] font-bold text-gray-500 flex items-center gap-1.5'>
+                              <span className="text-purple-400">LVL {entry.level}</span>
+                              <span className='opacity-30'>•</span>
+                              <span className="truncate">{Number(entry.coins).toLocaleString()} coins</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className='text-right flex-shrink-0'>
+                          {entry.rank === 1 && <Crown className='w-4 h-4 text-yellow-400 ml-auto' />}
+                          {entry.rank === 2 && <Medal className='w-4 h-4 text-gray-300 ml-auto' />}
+                          {entry.rank === 3 && <Award className='w-4 h-4 text-orange-400 ml-auto' />}
+                          <p className='text-[8px] text-gray-500 font-black uppercase mt-0.5'>Rank</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
-              </motion.div>
-            ))}
+              </>
+            )}
           </div>
         )}
+
       </div>
     </div>
   )
