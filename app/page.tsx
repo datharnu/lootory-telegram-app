@@ -23,6 +23,8 @@ export default function TelegramMiniApp() {
   const [level, setLevel] = useState(stats.level)
   const [xp, setXp] = useState(stats.xp)
   const [xpToNextLevel] = useState(1000)
+  const [lastDepletion, setLastDepletion] = useState<string | null>(stats.lastEnergyDepletionAt || null)
+  const [timeRemaining, setTimeRemaining] = useState<string | null>(null)
 
   const [floatingCoins, setFloatingCoins] = useState<Array<{ id: number; x: number; y: number }>>([])
   const [isLoading, setIsLoading] = useState(!isDataLoaded)
@@ -50,6 +52,7 @@ export default function TelegramMiniApp() {
       setCoinsPerTap(stats.tapPower);
       setLevel(stats.level);
       setXp(stats.xp);
+      setLastDepletion(stats.lastEnergyDepletionAt || null);
     }
   }, [isDataLoaded]);
 
@@ -61,9 +64,10 @@ export default function TelegramMiniApp() {
       maxEnergy,
       tapPower: coinsPerTap,
       level,
-      xp
+      xp,
+      lastEnergyDepletionAt: lastDepletion
     });
-  }, [coins, energy, maxEnergy, coinsPerTap, level, xp]);
+  }, [coins, energy, maxEnergy, coinsPerTap, level, xp, lastDepletion]);
 
   useEffect(() => {
     const authenticate = async () => {
@@ -103,7 +107,8 @@ export default function TelegramMiniApp() {
               xp: userData.xp || 0,
               energy: userData.energy || 1000,
               maxEnergy: userData.maxEnergy || 1000,
-              tapPower: userData.tapPower || 10
+              tapPower: userData.tapPower || 10,
+              lastEnergyDepletionAt: userData.lastEnergyDepletionAt || null
             };
 
             setStats(newStats);
@@ -136,7 +141,8 @@ export default function TelegramMiniApp() {
                 xp: userData.xp || 0,
                 energy: userData.energy || 1000,
                 maxEnergy: userData.maxEnergy || 1000,
-                tapPower: userData.tapPower || 10
+                tapPower: userData.tapPower || 10,
+                lastEnergyDepletionAt: userData.lastEnergyDepletionAt || null
               };
 
               setStats(newStats);
@@ -187,7 +193,17 @@ export default function TelegramMiniApp() {
       }
 
       try {
-        await updateUserStats(statsToSync);
+        const response = await updateUserStats(statsToSync);
+        if (response.success && response.data) {
+          const { maxEnergy: serverMax, lastEnergyDepletionAt: serverDepletion } = response.data;
+          if (serverMax && serverMax !== maxEnergy) {
+            setMaxEnergy(serverMax);
+            addLog(`⚖️ Sync: Max Energy updated to ${serverMax}`);
+          }
+          if (serverDepletion !== lastDepletion) {
+            setLastDepletion(serverDepletion);
+          }
+        }
         lastSyncedStats.current = { ...statsToSync };
       } catch (error) {
         console.error("Sync failed:", error);
@@ -216,12 +232,37 @@ export default function TelegramMiniApp() {
     };
   }, [user, isLoading]);
 
+  // Tapping Logic with 24h Lock Check
   const handleTap = () => {
+    // 1. Check if energy is already depleted (Lock exists)
+    if (lastDepletion) {
+      const now = new Date();
+      const depletionDate = new Date(lastDepletion);
+      const diff = now.getTime() - depletionDate.getTime();
+      const penalty = 24 * 60 * 60 * 1000;
+
+      if (diff < penalty) {
+        addLog("⛔ Tapping locked! Wait for recharge.");
+        return;
+      } else {
+        // Penalty over
+        setLastDepletion(null);
+      }
+    }
+
     if (energy > 0) {
+      const nextEnergy = energy - 1;
+
       setCoins((prev) => prev + coinsPerTap)
       setTapCount((prev) => prev + 1)
-      setEnergy((prev) => Math.max(0, prev - 1))
+      setEnergy(nextEnergy)
       setXp((prev) => prev + 2)
+
+      // 2. Check if this tap depleted the energy
+      if (nextEnergy <= 0) {
+        setLastDepletion(new Date().toISOString());
+        addLog("🪫 Energy Depleted! 24h lock engaged.");
+      }
 
       const newCoin = {
         id: Date.now(),
@@ -236,13 +277,33 @@ export default function TelegramMiniApp() {
     }
   }
 
-  // Energy regeneration
+  // Energy regeneration (only if not locked)
   useEffect(() => {
     const interval = setInterval(() => {
-      setEnergy((prev) => Math.min(maxEnergy, prev + 5))
+      if (!lastDepletion) {
+        setEnergy((prev) => Math.min(maxEnergy, prev + 5))
+      } else {
+        // Update countdown timer
+        const now = new Date();
+        const depletionDate = new Date(lastDepletion);
+        const diff = now.getTime() - depletionDate.getTime();
+        const penalty = 24 * 60 * 60 * 1000;
+
+        if (diff < penalty) {
+          const remaining = penalty - diff;
+          const hours = Math.floor(remaining / (1000 * 60 * 60));
+          const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+          setTimeRemaining(`${hours}h ${minutes}m ${seconds}s`);
+        } else {
+          setLastDepletion(null);
+          setTimeRemaining(null);
+          setEnergy(maxEnergy); // Instantly refill
+        }
+      }
     }, 1000)
     return () => clearInterval(interval)
-  }, [maxEnergy])
+  }, [maxEnergy, lastDepletion])
 
   // Level up check
   useEffect(() => {
@@ -379,8 +440,19 @@ export default function TelegramMiniApp() {
               alt="tap"
               width={180}
               height={180}
-              className="w-40 h-40 xs:w-48 xs:h-48 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] group-hover:scale-105 transition-transform"
+              className={`w-40 h-40 xs:w-48 xs:h-48 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] group-hover:scale-105 transition-transform ${lastDepletion ? 'grayscale opacity-40' : ''}`}
             />
+            {lastDepletion && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
+                <Zap size={32} className="text-yellow-400 mb-2 animate-pulse" />
+                <span className="text-[10px] font-black text-white bg-black/60 px-3 py-1 rounded-full border border-white/20 shadow-xl backdrop-blur-sm">
+                  ENERGY DEPLETED
+                </span>
+                <span className="text-[12px] font-black text-yellow-400 mt-2 filter drop-shadow-md">
+                  {timeRemaining}
+                </span>
+              </div>
+            )}
           </div>
 
           <AnimatePresence>
@@ -412,12 +484,19 @@ export default function TelegramMiniApp() {
       <div className="mt-auto mb-2 flex-shrink-0 bg-black/40 backdrop-blur-md rounded-[1.2rem] p-2 border border-white/10 shadow-lg">
         <div className='flex items-center gap-3 px-1.5 mb-2'>
           <div className='flex items-center gap-1 flex-shrink-0'>
-            <Zap className='w-3 h-3 text-yellow-400 fill-yellow-400/20' />
-            <span className='text-[10px] text-white font-black tracking-tighter'>{energy}<span className="text-gray-500">/{maxEnergy}</span></span>
+            <Zap className={`w-3 h-3 ${lastDepletion ? 'text-red-500' : 'text-yellow-400'} fill-yellow-400/20`} />
+            <span className={`text-[10px] ${lastDepletion ? 'text-red-400' : 'text-white'} font-black tracking-tighter`}>
+              {energy}<span className="text-gray-500">/{maxEnergy}</span>
+            </span>
           </div>
+          {lastDepletion && (
+            <div className="text-[9px] font-black text-yellow-400 animate-pulse flex items-center gap-1">
+              RECHARGING: {timeRemaining}
+            </div>
+          )}
           <div className='flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5'>
             <motion.div
-              className='h-full bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 bg-[length:200%_100%]'
+              className={`h-full bg-gradient-to-r ${lastDepletion ? 'from-red-600 to-orange-600' : 'from-yellow-400 via-orange-500 to-yellow-400'} bg-[length:200%_100%]`}
               initial={{ width: 0 }}
               animate={{
                 width: `${energyPercentage}%`,

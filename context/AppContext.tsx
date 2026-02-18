@@ -8,6 +8,7 @@ export interface UserStats {
     energy: number;
     maxEnergy: number;
     tapPower: number;
+    lastEnergyDepletionAt?: string | null;
 }
 
 export interface User {

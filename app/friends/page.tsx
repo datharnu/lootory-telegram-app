@@ -12,6 +12,8 @@ interface Friend {
   username: string
   createdAt: string
   coins: string | number
+  activeDaysCount: number
+  rewardClaimed: boolean
 }
 
 interface LeaderboardEntry {
@@ -162,8 +164,8 @@ export default function FriendsPage() {
                   <Coins className='w-4 h-4 text-yellow-500' />
                 </div>
                 <div>
-                  <p className='text-[10px] text-white font-black'>+5,000 Coins</p>
-                  <p className='text-[8px] text-gray-500'>For you and your friend on join</p>
+                  <p className='text-[10px] text-white font-black'>+2,000 Coins</p>
+                  <p className='text-[8px] text-gray-500'>For you & friend after 3 active days</p>
                 </div>
               </div>
               <div className='flex items-center gap-3'>
@@ -231,16 +233,26 @@ export default function FriendsPage() {
                       <div className='flex-1 min-w-0'>
                         <h3 className='text-xs font-black text-white truncate mb-0.5'>{friend.username}</h3>
                         <div className='flex items-center gap-2 text-[8px] font-bold text-gray-500'>
+                          <span className="text-gray-400 font-black">{friend.activeDaysCount}/3 DAYS ACTIVE</span>
+                          <span className='opacity-30'>•</span>
                           <span className="text-gray-400">Joined {new Date(friend.createdAt).toLocaleDateString()}</span>
                         </div>
                       </div>
                     </div>
                     <div className='text-right flex-shrink-0'>
                       <div className='flex items-center gap-1 justify-end mb-0.5'>
-                        <Coins className='w-2.5 h-2.5 text-yellow-500' />
-                        <span className='text-[9px] font-black text-white'>{Number(friend.coins).toLocaleString()}</span>
+                        {friend.rewardClaimed ? (
+                          <>
+                            <Coins className='w-2.5 h-2.5 text-yellow-500' />
+                            <span className='text-[9px] font-black text-green-400'>+2,000</span>
+                          </>
+                        ) : (
+                          <span className='text-[8px] font-black text-gray-500'>PENDING</span>
+                        )}
                       </div>
-                      <p className='text-[8px] text-gray-500 font-black uppercase tracking-tight'>Tipped</p>
+                      <p className='text-[8px] text-gray-500 font-black uppercase tracking-tight'>
+                        {friend.rewardClaimed ? 'Claimed' : 'Progress'}
+                      </p>
                     </div>
                   </div>
                 </motion.div>
