@@ -190,6 +190,15 @@ export default function TasksPage() {
             <p className='text-sm font-black text-green-400 italic'>{completedTasks} / {tasks.length || '...'}</p>
           </div>
         </div>
+
+        {/* Progress Bar */}
+        <div className='mt-3 h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5'>
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${(completedTasks / (tasks.length || 1)) * 100}%` }}
+            className='h-full bg-gradient-to-r from-purple-500 to-pink-500 shadow-[0_0_10px_rgba(168,85,247,0.3)]'
+          />
+        </div>
       </div>
 
       {/* Scrollable Content Area */}
@@ -267,12 +276,14 @@ export default function TasksPage() {
                         <div className='flex-1 min-w-0'>
                           <h3 className='text-xs font-black text-white leading-tight mb-1 truncate'>{task.title}</h3>
                           <div className='flex items-center gap-2'>
-                            <span className='text-[8px] font-black text-yellow-500 uppercase flex items-center gap-0.5'>
-                              <Coins className='w-2 h-2' /> +{task.coinReward}
+                            <span className='text-[8px] font-black text-yellow-500 uppercase flex items-center gap-0.5 bg-yellow-400/5 px-1.5 py-0.5 rounded-md border border-yellow-400/10'>
+                              <Coins className='w-2 h-2 text-yellow-400' /> +{task.coinReward.toLocaleString()}
                             </span>
-                            <span className='text-[8px] font-black text-blue-400 uppercase flex items-center gap-0.5'>
-                              <TrendingUp className='w-2 h-2' /> +{task.xpReward} XP
-                            </span>
+                            {task.xpReward > 0 && (
+                              <span className='text-[8px] font-black text-blue-400 uppercase flex items-center gap-0.5 bg-blue-400/5 px-1.5 py-0.5 rounded-md border border-blue-400/10'>
+                                <TrendingUp className='w-2 h-2 text-blue-400' /> +{task.xpReward} XP
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -284,9 +295,9 @@ export default function TasksPage() {
                             ? 'bg-green-500/20 text-green-400 border border-green-500/20'
                             : isPending
                               ? canVerify
-                                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-blue-500/20'
-                                : 'bg-white/10 text-white/40 cursor-wait'
-                              : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/20'
+                                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-blue-500/20 border border-blue-400/30'
+                                : 'bg-white/10 text-white/40 cursor-wait border border-white/5'
+                              : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/20 border border-purple-400/30 hover:brightness-110'
                             }`}
                         >
                           {task.isCompleted ? (
