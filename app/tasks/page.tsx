@@ -21,6 +21,8 @@ interface Task {
   startTime: string | null
   completedAt: string | null
   coinsEarned: number | null
+  isRepeatable: boolean
+  cooldownDays: number
 }
 
 interface DailyReward {
@@ -282,6 +284,11 @@ export default function TasksPage() {
                             {task.xpReward > 0 && (
                               <span className='text-[8px] font-black text-blue-400 uppercase flex items-center gap-0.5 bg-blue-400/5 px-1.5 py-0.5 rounded-md border border-blue-400/10'>
                                 <TrendingUp className='w-2 h-2 text-blue-400' /> +{task.xpReward} XP
+                              </span>
+                            )}
+                            {task.isRepeatable && (
+                              <span className='text-[8px] font-black text-orange-400 uppercase flex items-center gap-0.5 bg-orange-400/5 px-1.5 py-0.5 rounded-md border border-orange-400/10'>
+                                <Clock className='w-2 h-2 text-orange-400' /> WEEKLY
                               </span>
                             )}
                           </div>
