@@ -107,10 +107,39 @@ export default function TelegramMiniApp() {
               referralCode: userData.referralCode
             });
 
+            // 🔑 FIX: Check for unsent XP from last session (saved to localStorage on crash/missed sync)
+            const savedPendingXp = parseInt(localStorage.getItem('pending_xp') || '0', 10);
+            if (savedPendingXp > 0) {
+              addLog(`🔄 Replaying ${savedPendingXp} pending XP from last session...`);
+              localStorage.removeItem('pending_xp');
+              try {
+                await updateUserStats({ xpGained: savedPendingXp });
+                // Re-fetch user data with updated XP/level
+                const refreshed = await apiRequest("/auth/user");
+                if (refreshed.success) Object.assign(userData, refreshed.data);
+              } catch (e) {
+                console.error('Failed to replay pending XP:', e);
+              }
+            }
+
+            // 🔑 FIX: Reconcile server level vs locally cached level.
+            // If the server has a LOWER level than the localStorage cache AND there was
+            // pending XP, prefer the cached level (sync probably missed on last exit).
+            const cachedStatsRaw = localStorage.getItem('user_stats');
+            const cachedStats = cachedStatsRaw ? JSON.parse(cachedStatsRaw) : null;
+            const serverLevel = userData.level || 1;
+            const cachedLevel = cachedStats?.level || 1;
+            const resolvedLevel = cachedLevel > serverLevel ? cachedLevel : serverLevel;
+            const resolvedXp = cachedLevel > serverLevel ? (cachedStats?.xp || 0) : (userData.xp || 0);
+
+            if (cachedLevel > serverLevel) {
+              addLog(`⚠️ Cache level (${cachedLevel}) > server level (${serverLevel}). Using cache until next sync.`);
+            }
+
             const newStats = {
               coins: Number(userData.coins || 0),
-              level: userData.level || 1,
-              xp: userData.xp || 0,
+              level: resolvedLevel,
+              xp: resolvedXp,
               energy: userData.energy || 1000,
               maxEnergy: userData.maxEnergy || 1000,
               tapPower: userData.tapPower || 10,
@@ -141,10 +170,32 @@ export default function TelegramMiniApp() {
                 referralCode: userData.referralCode
               });
 
+              // Same pending XP replay for non-Telegram login path
+              const savedPendingXp2 = parseInt(localStorage.getItem('pending_xp') || '0', 10);
+              if (savedPendingXp2 > 0) {
+                addLog(`🔄 Replaying ${savedPendingXp2} pending XP from last session...`);
+                localStorage.removeItem('pending_xp');
+                try {
+                  await updateUserStats({ xpGained: savedPendingXp2 });
+                  const refreshed = await apiRequest("/auth/user");
+                  if (refreshed.success) Object.assign(userData, refreshed.data);
+                } catch (e) {
+                  console.error('Failed to replay pending XP:', e);
+                }
+              }
+
+              // Reconcile level
+              const cachedStatsRaw2 = localStorage.getItem('user_stats');
+              const cachedStats2 = cachedStatsRaw2 ? JSON.parse(cachedStatsRaw2) : null;
+              const resolvedLevel2 = (cachedStats2?.level || 1) > (userData.level || 1)
+                ? cachedStats2.level : (userData.level || 1);
+              const resolvedXp2 = (cachedStats2?.level || 1) > (userData.level || 1)
+                ? (cachedStats2?.xp || 0) : (userData.xp || 0);
+
               const newStats = {
                 coins: Number(userData.coins || 0),
-                level: userData.level || 1,
-                xp: userData.xp || 0,
+                level: resolvedLevel2,
+                xp: resolvedXp2,
                 energy: userData.energy || 1000,
                 maxEnergy: userData.maxEnergy || 1000,
                 tapPower: userData.tapPower || 10,
@@ -200,8 +251,10 @@ export default function TelegramMiniApp() {
         return;
       }
 
-      // Reset the XP delta counter before the async call
+      // Reset delta counter BEFORE the async call
       xpGainedSinceSync.current = 0;
+      // Clear the localStorage pending XP since we're sending it now
+      localStorage.removeItem('pending_xp');
 
       try {
         const response = await updateUserStats({
@@ -226,8 +279,6 @@ export default function TelegramMiniApp() {
           if (serverDepletion !== lastDepletion) {
             setLastDepletion(serverDepletion);
           }
-
-          // Show level-up modal if server confirmed a level-up
           if (response.data.leveledUp) {
             setShowLevelUp(true);
           }
@@ -236,11 +287,15 @@ export default function TelegramMiniApp() {
       } catch (error) {
         // Restore XP delta on failure so it's retried next sync
         xpGainedSinceSync.current += xpToSend;
+        // Also save to localStorage so it survives a page close
+        localStorage.setItem('pending_xp', String(xpGainedSinceSync.current));
         console.error("Sync failed:", error);
       }
     };
 
-    const syncTimeout = setTimeout(syncWithBackend, 3000);
+    // Sync after 1.5s of inactivity (reduced from 3s to catch exits faster)
+    const syncTimeout = setTimeout(syncWithBackend, 1500);
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') syncWithBackend();
     };
@@ -250,6 +305,29 @@ export default function TelegramMiniApp() {
     return () => {
       clearTimeout(syncTimeout);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+
+      // 🔑 FIX: Always fire a final sync on unmount (covers navigation-away & exit)
+      const pendingXp = xpGainedSinceSync.current;
+      const finalStats = latestStatsRef.current;
+      const hasChanges =
+        pendingXp > 0 ||
+        lastSyncedStats.current.coins !== finalStats.coins ||
+        lastSyncedStats.current.energy !== finalStats.energy;
+
+      if (hasChanges) {
+        xpGainedSinceSync.current = 0;
+        localStorage.removeItem('pending_xp');
+        updateUserStats({
+          coins: finalStats.coins,
+          xpGained: pendingXp > 0 ? pendingXp : undefined,
+          energy: finalStats.energy,
+        }).catch((err) => {
+          // If final sync fails, save pending XP to localStorage for replay on next session
+          xpGainedSinceSync.current = pendingXp;
+          localStorage.setItem('pending_xp', String(pendingXp));
+          console.error('Final sync failed, saved to localStorage:', err);
+        });
+      }
     };
   }, [user, isLoading, coins, xp, level, energy]);
 
