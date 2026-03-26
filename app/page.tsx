@@ -350,7 +350,7 @@ export default function TelegramMiniApp() {
 
     if (energy > 0) {
       const nextEnergy = energy - 1;
-      const XP_PER_TAP = 2;
+      const XP_PER_TAP = 1;
 
       setCoins((prev) => prev + coinsPerTap)
       setTapCount((prev) => prev + 1)
@@ -389,12 +389,10 @@ export default function TelegramMiniApp() {
     }
   }
 
-  // Energy regeneration (only when not locked)
+  // Energy lock countdown and unlock refill (no passive regen)
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!lastDepletion) {
-        setEnergy((prev) => Math.min(maxEnergy, prev + 5))
-      } else {
+      if (lastDepletion) {
         // Update countdown timer
         const now = new Date();
         const depletionDate = new Date(lastDepletion);
@@ -412,6 +410,8 @@ export default function TelegramMiniApp() {
           setTimeRemaining(null);
           setEnergy(maxEnergy); // Instantly refill on unlock
         }
+      } else {
+        setTimeRemaining(null);
       }
     }, 1000)
     return () => clearInterval(interval)
@@ -582,7 +582,7 @@ export default function TelegramMiniApp() {
         <div className="mt-4 text-center">
           <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] flex items-center gap-1.5">
             <Star size={10} className="text-yellow-400 animate-pulse" />
-            REWARD: <span className="text-green-400">+{coinsPerTap}C / +2XP</span>
+            REWARD: <span className="text-green-400">+{coinsPerTap}C / +1XP</span>
             <Star size={10} className="text-yellow-400 animate-pulse" />
           </p>
         </div>

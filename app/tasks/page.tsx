@@ -1,8 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react'
-import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Gift, Check, Clock, Coins, ExternalLink, Calendar, Loader2, TrendingUp, Sparkles } from 'lucide-react'
+import { Gift, Check, Clock, Coins, ExternalLink, Calendar, Loader2, TrendingUp, Sparkles, Instagram, Twitter, Youtube, Facebook, Send, Music2 } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
 import LoadingScreen from '@/components/shared/LoadingScreen'
 import { useApp } from '@/context/AppContext'
@@ -31,6 +30,21 @@ interface DailyReward {
   isClaimed: boolean
   claimedAt: string | null
   isClaimable: boolean
+}
+
+const getSocialTaskIcon = (task: Task) => {
+  const title = task.title.toLowerCase()
+  const url = (task.actionUrl || '').toLowerCase()
+  const source = `${title} ${url}`
+
+  if (source.includes('instagram')) return <Instagram className='w-5 h-5 text-pink-400' />
+  if (source.includes('twitter') || source.includes('x.com')) return <Twitter className='w-5 h-5 text-sky-400' />
+  if (source.includes('youtube') || source.includes('youtu.be')) return <Youtube className='w-5 h-5 text-red-400' />
+  if (source.includes('facebook')) return <Facebook className='w-5 h-5 text-blue-400' />
+  if (source.includes('telegram') || source.includes('t.me')) return <Send className='w-5 h-5 text-cyan-400' />
+  if (source.includes('tiktok')) return <Music2 className='w-5 h-5 text-white' />
+
+  return <span className='text-lg leading-none'>{task.icon}</span>
 }
 
 export default function TasksPage() {
@@ -272,7 +286,7 @@ export default function TasksPage() {
                     >
                       <div className='flex items-center gap-3'>
                         <div className={`p-2 rounded-xl flex-shrink-0 ${task.isCompleted ? 'bg-green-500/10' : 'bg-purple-500/10'}`}>
-                          <div className='text-2xl'>{task.icon}</div>
+                          {getSocialTaskIcon(task)}
                         </div>
 
                         <div className='flex-1 min-w-0'>
