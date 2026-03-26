@@ -59,14 +59,18 @@ export const loginWithEmail = async (email: string, password: string) => {
 
 export const updateUserStats = async (stats: {
     coins?: number;
-    xp?: number;
-    level?: number;
-    energy?: number
+    /** XP earned THIS session/tap (not cumulative total). Backend handles level-ups. */
+    xpGained?: number;
+    energy?: number;
 }) => {
     return apiRequest("/auth/stats", {
         method: "PATCH",
         body: JSON.stringify(stats),
     });
+};
+
+export const getLevelSystemInfo = async () => {
+    return apiRequest("/auth/user");
 };
 export const getReferrals = async () => {
     return apiRequest("/auth/referrals");

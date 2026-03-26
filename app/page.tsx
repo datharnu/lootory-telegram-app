@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 import LevelUpModal from '@/components/game/LevelUpModal'
 import LoadingScreen from '@/components/shared/LoadingScreen'
 import { useApp } from '@/context/AppContext'
+import { xpToNextLevel, processXpGain, maxEnergyForLevel, getLevelInfo } from '@/lib/levelSystem'
 
 export default function TelegramMiniApp() {
   const { isInitialLoad, setIsInitialLoad, user, setUser, stats, setStats, isDataLoaded, setIsDataLoaded } = useApp()
@@ -22,9 +23,14 @@ export default function TelegramMiniApp() {
   const [coinsPerTap, setCoinsPerTap] = useState(stats.tapPower)
   const [level, setLevel] = useState(stats.level)
   const [xp, setXp] = useState(stats.xp)
-  const [xpToNextLevel] = useState(1000)
   const [lastDepletion, setLastDepletion] = useState<string | null>(stats.lastEnergyDepletionAt || null)
   const [timeRemaining, setTimeRemaining] = useState<string | null>(null)
+
+  // Track XP gained since last backend sync (we send delta, not cumulative)
+  const xpGainedSinceSync = useRef(0);
+
+  // Dynamic XP threshold for the current level (changes on every level-up)
+  const currentXpThreshold = xpToNextLevel(level);
 
   const [floatingCoins, setFloatingCoins] = useState<Array<{ id: number; x: number; y: number }>>([])
   const [isLoading, setIsLoading] = useState(!isDataLoaded)
@@ -183,29 +189,53 @@ export default function TelegramMiniApp() {
 
     const syncWithBackend = async () => {
       const statsToSync = latestStatsRef.current;
+      const xpToSend = xpGainedSinceSync.current;
+
+      // Only sync if something actually changed
       if (
         lastSyncedStats.current.coins === statsToSync.coins &&
-        lastSyncedStats.current.xp === statsToSync.xp &&
-        lastSyncedStats.current.level === statsToSync.level &&
+        xpToSend === 0 &&
         lastSyncedStats.current.energy === statsToSync.energy
       ) {
         return;
       }
 
+      // Reset the XP delta counter before the async call
+      xpGainedSinceSync.current = 0;
+
       try {
-        const response = await updateUserStats(statsToSync);
+        const response = await updateUserStats({
+          coins: statsToSync.coins,
+          xpGained: xpToSend > 0 ? xpToSend : undefined,
+          energy: statsToSync.energy,
+        });
+
         if (response.success && response.data) {
-          const { maxEnergy: serverMax, lastEnergyDepletionAt: serverDepletion } = response.data;
+          const { maxEnergy: serverMax, lastEnergyDepletionAt: serverDepletion, level: serverLevel, xp: serverXp } = response.data;
+
+          // Trust server's level & XP after sync (it's the source of truth)
+          if (serverLevel !== undefined && serverLevel !== level) {
+            setLevel(serverLevel);
+            addLog(`🆙 Server confirmed Level ${serverLevel}`);
+          }
+          if (serverXp !== undefined) setXp(serverXp);
           if (serverMax && serverMax !== maxEnergy) {
             setMaxEnergy(serverMax);
-            addLog(`⚖️ Sync: Max Energy updated to ${serverMax}`);
+            addLog(`⚡ Max Energy updated to ${serverMax}`);
           }
           if (serverDepletion !== lastDepletion) {
             setLastDepletion(serverDepletion);
           }
+
+          // Show level-up modal if server confirmed a level-up
+          if (response.data.leveledUp) {
+            setShowLevelUp(true);
+          }
         }
         lastSyncedStats.current = { ...statsToSync };
       } catch (error) {
+        // Restore XP delta on failure so it's retried next sync
+        xpGainedSinceSync.current += xpToSend;
         console.error("Sync failed:", error);
       }
     };
@@ -219,22 +249,13 @@ export default function TelegramMiniApp() {
 
     return () => {
       clearTimeout(syncTimeout);
-      const statsToSync = latestStatsRef.current;
-      if (
-        lastSyncedStats.current.coins !== statsToSync.coins ||
-        lastSyncedStats.current.xp !== statsToSync.xp ||
-        lastSyncedStats.current.level !== statsToSync.level ||
-        lastSyncedStats.current.energy !== statsToSync.energy
-      ) {
-        updateUserStats(statsToSync).catch(console.error);
-      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [user, isLoading]);
+  }, [user, isLoading, coins, xp, level, energy]);
 
   // Tapping Logic with 24h Lock Check
   const handleTap = () => {
-    // 1. Check if energy is already depleted (Lock exists)
+    // 1. Check if energy is already depleted (lock active)
     if (lastDepletion) {
       const now = new Date();
       const depletionDate = new Date(lastDepletion);
@@ -245,18 +266,31 @@ export default function TelegramMiniApp() {
         addLog("⛔ Tapping locked! Wait for recharge.");
         return;
       } else {
-        // Penalty over
         setLastDepletion(null);
       }
     }
 
     if (energy > 0) {
       const nextEnergy = energy - 1;
+      const XP_PER_TAP = 2;
 
       setCoins((prev) => prev + coinsPerTap)
       setTapCount((prev) => prev + 1)
       setEnergy(nextEnergy)
-      setXp((prev) => prev + 2)
+
+      // Track XP delta for backend sync
+      xpGainedSinceSync.current += XP_PER_TAP;
+
+      // Process XP gain locally for instant level-up feedback
+      const result = processXpGain(level, xp, XP_PER_TAP);
+      setXp(result.newXp);
+
+      if (result.leveledUp) {
+        setLevel(result.newLevel);
+        setMaxEnergy(result.newMaxEnergy);
+        setShowLevelUp(true);
+        addLog(`🆙 Level Up! → Level ${result.newLevel} | Max Energy: ${result.newMaxEnergy}`);
+      }
 
       // 2. Check if this tap depleted the energy
       if (nextEnergy <= 0) {
@@ -277,7 +311,7 @@ export default function TelegramMiniApp() {
     }
   }
 
-  // Energy regeneration (only if not locked)
+  // Energy regeneration (only when not locked)
   useEffect(() => {
     const interval = setInterval(() => {
       if (!lastDepletion) {
@@ -298,22 +332,14 @@ export default function TelegramMiniApp() {
         } else {
           setLastDepletion(null);
           setTimeRemaining(null);
-          setEnergy(maxEnergy); // Instantly refill
+          setEnergy(maxEnergy); // Instantly refill on unlock
         }
       }
     }, 1000)
     return () => clearInterval(interval)
   }, [maxEnergy, lastDepletion])
 
-  // Level up check
-  useEffect(() => {
-    if (xp >= xpToNextLevel) {
-      const leftoverXp = xp - xpToNextLevel;
-      setLevel((prev) => prev + 1)
-      setXp(leftoverXp)
-      setShowLevelUp(true)
-    }
-  }, [xp, xpToNextLevel])
+  const levelInfo = getLevelInfo(level);
 
   const energyPercentage = (energy / maxEnergy) * 100
 
@@ -405,18 +431,22 @@ export default function TelegramMiniApp() {
         <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-3 shadow-inner">
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-[8px] text-gray-400 font-black uppercase tracking-[0.1em]">Progression</span>
-            <span className="text-[8px] text-purple-400 font-black tracking-widest">{xp.toLocaleString()} / {xpToNextLevel.toLocaleString()} XP</span>
+            <span className="text-[8px] text-purple-400 font-black tracking-widest">{xp.toLocaleString()} / {currentXpThreshold.toLocaleString()} XP</span>
           </div>
           <div className='relative w-full h-2 bg-black/50 rounded-full overflow-hidden p-[1px] border border-white/10'>
             <motion.div
               className='h-full relative rounded-full'
               initial={{ width: 0 }}
-              animate={{ width: `${(xp / xpToNextLevel) * 100}%` }}
+              animate={{ width: `${Math.min(100, (xp / currentXpThreshold) * 100)}%` }}
               transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-[length:200%_100%] animate-shimmer" />
               <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
             </motion.div>
+          </div>
+          <div className="flex justify-between items-center mt-1">
+            <span className="text-[7px] text-gray-600 font-bold">⚡ Max {levelInfo.maxEnergy.toLocaleString()} energy</span>
+            <span className="text-[7px] text-gray-600 font-bold">🎯 Max {levelInfo.maxXpPerDay.toLocaleString()} XP/day</span>
           </div>
         </div>
       </div>
