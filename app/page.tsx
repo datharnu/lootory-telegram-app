@@ -284,7 +284,10 @@ export default function TelegramMiniApp() {
   }, [coins, xp, level, energy]);
 
   useEffect(() => {
-    if (!user || isLoading) return;
+    // Hard gate: never sync to /auth/stats until auth has completed AND the
+    // user's real stats have been hydrated into local state. Without this,
+    // a mount-race can send `coins: 0` to the server before login finishes.
+    if (!user || isLoading || !isDataLoaded) return;
 
     const syncWithBackend = async () => {
       const statsToSync = latestStatsRef.current;
@@ -299,6 +302,13 @@ export default function TelegramMiniApp() {
         return;
       }
 
+      // Only send `coins` when energy was actually spent this session (i.e.
+      // real tapping happened). The backend treats /auth/stats as gain-only,
+      // but skipping the field entirely when nothing was earned is a cleaner
+      // signal and avoids the sync sending a stale balance at all.
+      const energySpent = lastSyncedStats.current.energy - statsToSync.energy;
+      const shouldSendCoins = energySpent > 0 || xpToSend > 0;
+
       // Reset delta counter BEFORE the async call
       xpGainedSinceSync.current = 0;
       // Clear the localStorage pending XP since we're sending it now
@@ -306,7 +316,7 @@ export default function TelegramMiniApp() {
 
       try {
         const response = await updateUserStats({
-          coins: statsToSync.coins,
+          coins: shouldSendCoins ? statsToSync.coins : undefined,
           xpGained: xpToSend > 0 ? xpToSend : undefined,
           energy: statsToSync.energy,
         });
@@ -370,21 +380,26 @@ export default function TelegramMiniApp() {
         lastSyncedStats.current.energy !== finalStats.energy;
 
       if (hasChanges) {
+        // Apply the same "only send coins when energy was actually spent"
+        // rule on unmount — otherwise a navigation away from the home page
+        // could flush a stale balance.
+        const finalEnergySpent = lastSyncedStats.current.energy - finalStats.energy;
+        const finalShouldSendCoins = finalEnergySpent > 0 || pendingXp > 0;
+
         xpGainedSinceSync.current = 0;
         localStorage.removeItem('pending_xp');
         updateUserStats({
-          coins: finalStats.coins,
+          coins: finalShouldSendCoins ? finalStats.coins : undefined,
           xpGained: pendingXp > 0 ? pendingXp : undefined,
           energy: finalStats.energy,
         }).catch((err) => {
-          // If final sync fails, save pending XP to localStorage for replay on next session
           xpGainedSinceSync.current = pendingXp;
           localStorage.setItem('pending_xp', String(pendingXp));
           console.error('Final sync failed, saved to localStorage:', err);
         });
       }
     };
-  }, [user, isLoading, coins, xp, level, energy]);
+  }, [user, isLoading, isDataLoaded, coins, xp, level, energy]);
 
   // Tapping Logic with 24h Lock Check
   const handleTap = () => {
