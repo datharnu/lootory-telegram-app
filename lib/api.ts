@@ -85,3 +85,30 @@ export const updateWalletAddress = async (walletAddress: string) => {
         body: JSON.stringify({ walletAddress }),
     });
 };
+
+// ── Boosters ─────────────────────────────────────────────────────────────
+export const getBoosterStatus = async () => {
+    return apiRequest("/boosters/status");
+};
+
+export const purchaseTapBooster = async (type: "x2" | "x3" | "x5") => {
+    return apiRequest("/boosters/tap/purchase", {
+        method: "POST",
+        body: JSON.stringify({ type }),
+    });
+};
+
+export const purchasePassiveBooster = async (
+    type: "mini" | "pro" | "turbo" | "mega" | "titan"
+) => {
+    return apiRequest("/boosters/passive/purchase", {
+        method: "POST",
+        body: JSON.stringify({ type }),
+    });
+};
+
+export const claimPassiveBooster = async () => {
+    return apiRequest("/boosters/passive/claim", {
+        method: "POST",
+    });
+};

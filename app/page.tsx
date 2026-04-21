@@ -11,6 +11,7 @@ import LevelUpModal from '@/components/game/LevelUpModal'
 import LoadingScreen from '@/components/shared/LoadingScreen'
 import { useApp } from '@/context/AppContext'
 import { xpToNextLevel, processXpGain, maxEnergyForLevel, getLevelInfo } from '@/lib/levelSystem'
+import { getActiveTapMultiplier, estimatePassivePending, formatCountdown } from '@/lib/boosterSystem'
 
 export default function TelegramMiniApp() {
   const { isInitialLoad, setIsInitialLoad, user, setUser, stats, setStats, isDataLoaded, setIsDataLoaded } = useApp()
@@ -34,6 +35,18 @@ export default function TelegramMiniApp() {
 
   const [floatingCoins, setFloatingCoins] = useState<Array<{ id: number; x: number; y: number }>>([])
   const [isLoading, setIsLoading] = useState(!isDataLoaded)
+  // Re-tick every second so booster countdowns / passive pending refresh live.
+  const [nowTick, setNowTick] = useState(() => new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  const tapMultiplier = getActiveTapMultiplier(stats.tapBooster ?? null, nowTick)
+  const tapBoosterTimeLeft = stats.tapBooster?.expiresAt
+    ? Math.max(0, new Date(stats.tapBooster.expiresAt).getTime() - nowTick.getTime())
+    : 0
+  const passivePending = estimatePassivePending(stats.passiveBooster ?? null, nowTick)
   const [debugLog, setDebugLog] = useState<string[]>([])
   const [showConsole, setShowConsole] = useState(true)
   const [isMinimized, setIsMinimized] = useState(false)
@@ -62,17 +75,20 @@ export default function TelegramMiniApp() {
     }
   }, [isDataLoaded]);
 
-  // Sync internal local changes back to global AppContext
+  // Sync internal local changes back to global AppContext.
+  // NOTE: we merge into `prev` so we don't wipe booster fields that are
+  // owned by AppContext (populated on login + after every /auth/stats sync).
   useEffect(() => {
-    setStats({
+    setStats(prev => ({
+      ...prev,
       coins,
       energy,
       maxEnergy,
       tapPower: coinsPerTap,
       level,
       xp,
-      lastEnergyDepletionAt: lastDepletion
-    });
+      lastEnergyDepletionAt: lastDepletion,
+    }));
   }, [coins, energy, maxEnergy, coinsPerTap, level, xp, lastDepletion]);
 
   useEffect(() => {
@@ -143,7 +159,23 @@ export default function TelegramMiniApp() {
               energy: userData.energy || 1000,
               maxEnergy: userData.maxEnergy || 1000,
               tapPower: userData.tapPower || 10,
-              lastEnergyDepletionAt: userData.lastEnergyDepletionAt || null
+              lastEnergyDepletionAt: userData.lastEnergyDepletionAt || null,
+              tapBooster: userData.tapBoosterType ? {
+                active: true,
+                type: userData.tapBoosterType,
+                multiplier: userData.tapBoosterMultiplier || 1,
+                expiresAt: userData.tapBoosterExpiresAt || null,
+              } : null,
+              passiveBooster: userData.passiveBoosterType ? {
+                type: userData.passiveBoosterType,
+                ratePerHour: userData.passiveBoosterRate || 0,
+                startedAt: userData.passiveBoosterStartedAt,
+                expiresAt: userData.passiveBoosterExpiresAt,
+                lastClaimedAt: userData.passiveBoosterLastClaimedAt,
+                pendingPoints: 0,
+                isExpired: false,
+                msRemaining: 0,
+              } : null,
             };
 
             setStats(newStats);
@@ -199,7 +231,23 @@ export default function TelegramMiniApp() {
                 energy: userData.energy || 1000,
                 maxEnergy: userData.maxEnergy || 1000,
                 tapPower: userData.tapPower || 10,
-                lastEnergyDepletionAt: userData.lastEnergyDepletionAt || null
+                lastEnergyDepletionAt: userData.lastEnergyDepletionAt || null,
+                tapBooster: userData.tapBoosterType ? {
+                  active: true,
+                  type: userData.tapBoosterType,
+                  multiplier: userData.tapBoosterMultiplier || 1,
+                  expiresAt: userData.tapBoosterExpiresAt || null,
+                } : null,
+                passiveBooster: userData.passiveBoosterType ? {
+                  type: userData.passiveBoosterType,
+                  ratePerHour: userData.passiveBoosterRate || 0,
+                  startedAt: userData.passiveBoosterStartedAt,
+                  expiresAt: userData.passiveBoosterExpiresAt,
+                  lastClaimedAt: userData.passiveBoosterLastClaimedAt,
+                  pendingPoints: 0,
+                  isExpired: false,
+                  msRemaining: 0,
+                } : null,
               };
 
               setStats(newStats);
@@ -264,7 +312,14 @@ export default function TelegramMiniApp() {
         });
 
         if (response.success && response.data) {
-          const { maxEnergy: serverMax, lastEnergyDepletionAt: serverDepletion, level: serverLevel, xp: serverXp } = response.data;
+          const { maxEnergy: serverMax, lastEnergyDepletionAt: serverDepletion, level: serverLevel, xp: serverXp, tapBooster: serverTap, passiveBooster: serverPassive } = response.data;
+
+          // Keep booster fields in sync with server truth after every stats sync.
+          setStats(prev => ({
+            ...prev,
+            tapBooster: serverTap ?? null,
+            passiveBooster: serverPassive ?? null,
+          }));
 
           // Trust server's level & XP after sync (it's the source of truth)
           if (serverLevel !== undefined && serverLevel !== level) {
@@ -351,8 +406,10 @@ export default function TelegramMiniApp() {
     if (energy > 0) {
       const nextEnergy = energy - 1;
       const XP_PER_TAP = 1;
+      // Apply tap-booster multiplier (1 if no active booster).
+      const coinsThisTap = coinsPerTap * tapMultiplier;
 
-      setCoins((prev) => prev + coinsPerTap)
+      setCoins((prev) => prev + coinsThisTap)
       setTapCount((prev) => prev + 1)
       setEnergy(nextEnergy)
 
@@ -573,7 +630,7 @@ export default function TelegramMiniApp() {
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 className="absolute text-yellow-400 font-black text-xl pointer-events-none z-20 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
               >
-                +{coinsPerTap}
+                +{coinsPerTap * tapMultiplier}
               </motion.div>
             ))}
           </AnimatePresence>
@@ -582,7 +639,12 @@ export default function TelegramMiniApp() {
         <div className="mt-4 text-center">
           <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] flex items-center gap-1.5">
             <Star size={10} className="text-yellow-400 animate-pulse" />
-            REWARD: <span className="text-green-400">+{coinsPerTap}C / +1XP</span>
+            REWARD: <span className="text-green-400">+{coinsPerTap * tapMultiplier}C / +1XP</span>
+            {tapMultiplier > 1 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/30 text-purple-200 text-[9px] font-black">
+                {tapMultiplier}× · {formatCountdown(tapBoosterTimeLeft)}
+              </span>
+            )}
             <Star size={10} className="text-yellow-400 animate-pulse" />
           </p>
         </div>
@@ -613,6 +675,30 @@ export default function TelegramMiniApp() {
             />
           </div>
         </div>
+
+        {stats.passiveBooster && (
+          <Link href="/boosters" className="block mb-2">
+            <motion.div
+              whileTap={{ scale: 0.98 }}
+              className="flex items-center justify-between bg-gradient-to-r from-emerald-600/20 to-teal-600/20 border border-emerald-400/30 rounded-xl px-3 py-2"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-base">⛏️</span>
+                <div>
+                  <p className="text-[9px] text-emerald-300 font-black uppercase tracking-widest leading-none mb-0.5">
+                    {stats.passiveBooster.type} Miner · {stats.passiveBooster.ratePerHour}/hr
+                  </p>
+                  <p className="text-[10px] text-white font-black leading-none">
+                    {passivePending.toLocaleString()} pts pending
+                  </p>
+                </div>
+              </div>
+              <span className="text-[9px] text-emerald-200 font-black uppercase tracking-widest">
+                {stats.passiveBooster.isExpired ? 'Claim' : 'View'}
+              </span>
+            </motion.div>
+          </Link>
+        )}
 
         <div className='grid grid-cols-2 gap-2'>
           <Link href="/boosters">

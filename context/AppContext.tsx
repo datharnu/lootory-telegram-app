@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { ActiveTapBooster, ActivePassiveBooster } from '@/lib/boosterSystem';
 
 export interface UserStats {
     coins: number;
@@ -9,6 +10,8 @@ export interface UserStats {
     maxEnergy: number;
     tapPower: number;
     lastEnergyDepletionAt?: string | null;
+    tapBooster?: ActiveTapBooster | null;
+    passiveBooster?: ActivePassiveBooster | null;
 }
 
 export interface User {
@@ -42,7 +45,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         level: 1,
         energy: 1000,
         maxEnergy: 1000,
-        tapPower: 10
+        tapPower: 10,
+        tapBooster: null,
+        passiveBooster: null,
     });
 
     // Try to load cached stats from localStorage for instant display
